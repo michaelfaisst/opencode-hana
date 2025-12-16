@@ -9,7 +9,6 @@ import {
   SidebarContextUsage,
   SidebarChangedFiles,
   SidebarTasks,
-  SidebarEmptyState,
   type TodoItem,
   type ChangedFile,
   type SessionStats,
@@ -298,22 +297,16 @@ export function ChatSidebar({
       <SidebarSessionInfo stats={stats} />
 
       {/* Context Usage */}
-      {contextUsage && contextLimit && (
-        <SidebarContextUsage
-          contextUsage={contextUsage}
-          contextLimit={contextLimit}
-        />
-      )}
+      <SidebarContextUsage
+        contextUsage={contextUsage}
+        contextLimit={contextLimit}
+      />
 
       {/* Changed Files */}
-      {changedFiles.length > 0 && <SidebarChangedFiles files={changedFiles} />}
+      <SidebarChangedFiles files={changedFiles} />
 
-      {/* Todo List */}
-      {todos.length > 0 ? (
-        <SidebarTasks todos={todos} />
-      ) : (
-        <SidebarEmptyState />
-      )}
+      {/* Tasks */}
+      <SidebarTasks todos={todos} />
     </div>
   );
 }

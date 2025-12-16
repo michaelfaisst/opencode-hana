@@ -15,11 +15,11 @@ export function SidebarTasks({ todos }: TasksProps) {
   const progress =
     todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
 
-  const badge = (
+  const badge = todos.length > 0 ? (
     <span className="text-xs text-muted-foreground">
       {completedCount}/{todos.length}
     </span>
-  );
+  ) : null;
 
   return (
     <CollapsibleSection
@@ -30,32 +30,38 @@ export function SidebarTasks({ todos }: TasksProps) {
       storageKey="tasks"
       className="flex-1 overflow-hidden flex flex-col border-b-0"
     >
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Progress bar */}
-        <div className="px-4 pb-2">
-          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+      {todos.length > 0 ? (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Progress bar */}
+          <div className="px-4 pb-2">
+            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            {inProgressCount > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {inProgressCount} task{inProgressCount > 1 ? "s" : ""} in progress
+              </p>
+            )}
           </div>
 
-          {inProgressCount > 0 && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {inProgressCount} task{inProgressCount > 1 ? "s" : ""} in progress
-            </p>
-          )}
-        </div>
-
-        {/* Todo items */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-2 pb-2 space-y-1">
-            {todos.map((todo) => (
-              <TodoItemRow key={todo.id} todo={todo} />
-            ))}
+          {/* Todo items */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-2 pb-2 space-y-1">
+              {todos.map((todo) => (
+                <TodoItemRow key={todo.id} todo={todo} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="px-4 pb-4">
+          <p className="text-xs text-muted-foreground">No active tasks</p>
+        </div>
+      )}
     </CollapsibleSection>
   );
 }

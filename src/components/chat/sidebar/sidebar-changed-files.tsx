@@ -13,9 +13,9 @@ import { CollapsibleSection } from "./collapsible-section";
 import type { ChangedFilesProps, ChangedFile } from "./types";
 
 export function SidebarChangedFiles({ files }: ChangedFilesProps) {
-  const badge = (
+  const badge = files.length > 0 ? (
     <span className="text-xs text-muted-foreground">{files.length}</span>
-  );
+  ) : null;
 
   return (
     <CollapsibleSection
@@ -25,13 +25,19 @@ export function SidebarChangedFiles({ files }: ChangedFilesProps) {
       defaultOpen={true}
       storageKey="changed-files"
     >
-      <div className="max-h-40 overflow-y-auto">
-        <div className="px-2 pb-2 space-y-0.5">
-          {files.map((file) => (
-            <ChangedFileRow key={file.path} file={file} />
-          ))}
+      {files.length > 0 ? (
+        <div className="max-h-40 overflow-y-auto">
+          <div className="px-2 pb-2 space-y-0.5">
+            {files.map((file) => (
+              <ChangedFileRow key={file.path} file={file} />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="px-4 pb-4">
+          <p className="text-xs text-muted-foreground">No files changed yet</p>
+        </div>
+      )}
     </CollapsibleSection>
   );
 }
