@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,7 @@ import { X, ArrowLeft } from "lucide-react";
 export function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { settings, setDefaultModel } = useSettings();
+  const { settings, setDefaultModel, setReplaceSessionOnNew } = useSettings();
   const { data: providersData, isLoading: isLoadingProviders } = useProviders();
   const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "http://localhost:4096";
   const [inputValue, setInputValue] = useState("");
@@ -153,7 +154,8 @@ export function SettingsPage() {
           </button>
         }
       />
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Server Connection</CardTitle>
@@ -269,6 +271,30 @@ export function SettingsPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">Session Behavior</CardTitle>
+            <CardDescription>
+              Configure how sessions are managed
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="replace-session">Replace session on new</Label>
+                <p className="text-xs text-muted-foreground">
+                  When enabled, creating a new session will delete the current one and create a fresh session with the same directory and title.
+                </p>
+              </div>
+              <Switch
+                id="replace-session"
+                checked={settings.replaceSessionOnNew}
+                onCheckedChange={setReplaceSessionOnNew}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">About</CardTitle>
             <CardDescription>
               OpenCode Web Dashboard
@@ -283,6 +309,7 @@ export function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useSessions, useCreateSession, useDeleteSession } from "@/hooks";
 import { CreateSessionDialog } from "@/components/sessions";
@@ -170,36 +171,59 @@ export function SessionsSidebar(_props: SessionsSidebarProps) {
       {/* Sessions list */}
       <div className="flex-1 overflow-y-auto">
         {isCollapsed ? (
-          // Collapsed view - just icons
+          // Collapsed view - just icons with tooltips
           <div className="flex flex-col items-center py-2 gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setCreateDialogOpen(true)}
-              disabled={createSession.isPending}
-              title="New session"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={(props) => (
+                  <Button
+                    {...props}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setCreateDialogOpen(true)}
+                    disabled={createSession.isPending}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              />
+              <TooltipContent side="right">New session</TooltipContent>
+            </Tooltip>
             {sortedSessions.slice(0, 10).map((session) => {
               const status = sessionStatuses.get(session.id);
               const isBusy = status?.type === "busy";
+              const displayTitle = session.title || `Session ${session.id.slice(0, 8)}`;
+              const projectName = session.directory ? getProjectName(session.directory) : null;
               return (
-                <Button
-                  key={session.id}
-                  variant={session.id === currentSessionId ? "secondary" : "ghost"}
-                  size="icon"
-                  className="h-8 w-8 relative"
-                  onClick={() => handleSessionClick(session.id)}
-                  title={session.title || `Session ${session.id.slice(0, 8)}`}
-                >
-                  {isBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  ) : (
-                    <MessageSquare className="h-4 w-4" />
-                  )}
-                </Button>
+                <Tooltip key={session.id}>
+                  <TooltipTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant={session.id === currentSessionId ? "secondary" : "ghost"}
+                        size="icon"
+                        className="h-8 w-8 relative"
+                        onClick={() => handleSessionClick(session.id)}
+                      >
+                        {isBusy ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        ) : (
+                          <MessageSquare className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  />
+                  <TooltipContent side="right" className="flex flex-col gap-0.5">
+                    <span className="font-medium">{displayTitle}</span>
+                    {projectName && (
+                      <span className="text-[10px] opacity-70 flex items-center gap-1">
+                        <Folder className="h-2.5 w-2.5" />
+                        {projectName}
+                      </span>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -262,8 +286,8 @@ function SessionItem({ session, isActive, isBusy, onClick, onDelete }: SessionIt
       onClick={onClick}
       className={cn(
         "group w-full flex items-start gap-2 px-3 py-2 text-left transition-colors",
-        "hover:bg-accent/50",
-        isActive && "bg-accent"
+        "hover:bg-secondary",
+        isActive && "bg-secondary text-secondary-foreground"
       )}
     >
       {isBusy ? (

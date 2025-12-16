@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MessageSquare, Plus } from "lucide-react";
 import { Header } from "@/components/layout/header";
@@ -10,13 +10,22 @@ import {
   useSession,
   useSessions,
   useCreateSession,
+  useDeleteSession,
   useMessages,
   useSendMessage,
   useAbortSession,
   useProviders,
   useSettings,
+  useRevertSession,
+  useUnrevertSession,
+  useCompactSession,
+  useSessionCommand,
+  useCopySession,
+  useShareSession,
   SessionNotFoundError,
   type ImageAttachment,
+  type Command,
+  getWebSessionInfo,
 } from "@/hooks";
 import { useSessionStatusFromContext } from "@/providers";
 import type { Session } from "@opencode-ai/sdk/client";
@@ -39,6 +48,7 @@ export function HomePage() {
   // Fetch all sessions
   const { data: sessions = [], isLoading: isLoadingSessions } = useSessions();
   const createSession = useCreateSession();
+  const deleteSession = useDeleteSession();
 
   // Sort sessions by updatedAt descending
   const sortedSessions = useMemo(() => {
@@ -110,6 +120,14 @@ export function HomePage() {
     activeSessionId || ""
   );
 
+  // Command hooks
+  const revertSession = useRevertSession();
+  const unrevertSession = useUnrevertSession();
+  const compactSession = useCompactSession();
+  const sessionCommand = useSessionCommand();
+  const copySession = useCopySession();
+  const shareSession = useShareSession();
+
   // Handle session not found - navigate to root to auto-select another
   useEffect(() => {
     if (sessionError instanceof SessionNotFoundError) {
@@ -154,6 +172,122 @@ export function HomePage() {
     }
   };
 
+  // Handle command execution
+  const handleCommand = useCallback(async (command: Command) => {
+    if (!activeSessionId) return;
+
+    const sessionInfo = getWebSessionInfo(activeSessionId);
+    const directory = sessionInfo?.directory;
+
+    try {
+      switch (command.name) {
+        case "new": {
+          if (!directory) {
+            console.error("No directory found for session");
+            return;
+          }
+          
+          // Get the current session's title if we're replacing
+          const currentTitle = session?.title;
+          
+          // If replaceSessionOnNew is enabled, delete the current session first
+          if (settings.replaceSessionOnNew) {
+            await deleteSession.mutateAsync(activeSessionId);
+          }
+          
+          // Create new session with same directory (and title if replacing)
+          const newSession = await createSession.mutateAsync({ 
+            title: settings.replaceSessionOnNew ? currentTitle : undefined,
+            directory 
+          });
+          if (newSession?.id) {
+            navigate(`/sessions/${newSession.id}`);
+          }
+          break;
+        }
+
+        case "undo": {
+          const lastAssistantMessage = [...messages]
+            .reverse()
+            .find((m) => m.info.role === "assistant");
+          if (!lastAssistantMessage) {
+            console.warn("No assistant message to revert");
+            return;
+          }
+          await revertSession.mutateAsync({
+            sessionId: activeSessionId,
+            messageId: lastAssistantMessage.info.id,
+          });
+          break;
+        }
+
+        case "redo": {
+          await unrevertSession.mutateAsync({ sessionId: activeSessionId });
+          break;
+        }
+
+        case "review": {
+          await sessionCommand.mutateAsync({
+            sessionId: activeSessionId,
+            command: "review",
+          });
+          break;
+        }
+
+        case "compact": {
+          if (!selectedModel) {
+            console.error("No model selected for compact");
+            return;
+          }
+          await compactSession.mutateAsync({
+            sessionId: activeSessionId,
+            providerId: selectedModel.providerID,
+            modelId: selectedModel.modelID,
+          });
+          break;
+        }
+
+        case "copy": {
+          const result = await copySession.mutateAsync({ sessionId: activeSessionId });
+          if (result.copied) {
+            console.log(`Copied ${result.messageCount} messages to clipboard`);
+          }
+          break;
+        }
+
+        case "export": {
+          const shareResult = await shareSession.mutateAsync({ sessionId: activeSessionId });
+          if (shareResult?.share?.url) {
+            await navigator.clipboard.writeText(shareResult.share.url);
+            console.log("Share URL copied:", shareResult.share.url);
+            window.open(shareResult.share.url, "_blank");
+          }
+          break;
+        }
+
+        default:
+          console.warn(`Unknown command: ${command.name}`);
+      }
+    } catch (error) {
+      console.error(`Failed to execute command ${command.name}:`, error);
+    }
+  }, [
+    activeSessionId,
+    messages,
+    selectedModel,
+    session,
+    settings.replaceSessionOnNew,
+    navigate,
+    createSession,
+    deleteSession,
+    revertSession,
+    unrevertSession,
+    compactSession,
+    sessionCommand,
+    copySession,
+    shareSession,
+  ]);
+
   const title = session?.title || (activeSessionId ? `Session ${activeSessionId.slice(0, 8)}` : "OpenCode");
   const hasNoSessions = !isLoadingSessions && sortedSessions.length === 0;
 
@@ -182,6 +316,7 @@ export function HomePage() {
               retryStatus={status.type === "retry" ? status : undefined}
               onSendMessage={handleSendMessage}
               onAbort={handleAbort}
+              onCommand={handleCommand}
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
             />

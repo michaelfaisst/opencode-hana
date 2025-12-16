@@ -35,7 +35,7 @@ export function SessionCard({
   const timeAgo = updatedDate ? getTimeAgo(updatedDate) : null;
 
   return (
-    <Card className="group relative transition-colors hover:bg-accent/50">
+    <Card className="group relative transition-colors hover:bg-muted">
       <Link to={`/sessions/${id}`} className="block">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">

@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
-import { Send, Loader2, X, Image as ImageIcon, Lightbulb, Hammer } from "lucide-react";
+import { Send, X, Image as ImageIcon, Lightbulb, Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FileMentionPopover } from "./file-mention-popover";
+import { CommandPopover } from "./command-popover";
 import { useFileSearch } from "@/hooks/use-file-search";
+import { filterCommands, type Command } from "@/hooks/use-commands";
 import { ModelSelector, type SelectedModel } from "@/components/common";
 import type { ImageAttachment } from "@/hooks/use-messages";
 import type { AgentMode } from "@/hooks/use-settings";
@@ -13,7 +15,7 @@ interface MessageInputProps {
   onSendMessage: (message: string, images?: ImageAttachment[]) => void;
   onAbort?: () => void;
   onToggleMode?: () => void;
-  isLoading?: boolean;
+  onCommand?: (command: Command) => void;
   disabled?: boolean;
   isBusy?: boolean;
   placeholder?: string;
@@ -28,14 +30,19 @@ interface MentionState {
   query: string;
 }
 
+interface CommandState {
+  isActive: boolean;
+  query: string;
+}
+
 export const MessageInput = memo(function MessageInput({
   onSendMessage,
   onAbort,
   onToggleMode,
-  isLoading,
+  onCommand,
   disabled,
   isBusy,
-  placeholder = "Type a message... (@ to mention files, paste images)",
+  placeholder = "Type a message... (@ files, / commands)",
   agentMode = "build",
   selectedModel,
   onModelChange,
@@ -48,10 +55,17 @@ export const MessageInput = memo(function MessageInput({
     startIndex: -1,
     query: "",
   });
+  const [commandState, setCommandState] = useState<CommandState>({
+    isActive: false,
+    query: "",
+  });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { files, isLoading: isSearching, searchFiles, clearFiles } = useFileSearch();
+
+  // Filter commands based on query
+  const filteredCommands = commandState.isActive ? filterCommands(commandState.query) : [];
 
   // Auto-resize textarea
   useEffect(() => {
@@ -71,16 +85,39 @@ export const MessageInput = memo(function MessageInput({
     }
   }, [mentionState.isActive, mentionState.query, searchFiles, clearFiles]);
 
-  // Reset selected index when files change
+  // Reset selected index when files or commands change
   useEffect(() => {
     setSelectedIndex(0);
-  }, [files]);
+  }, [files, filteredCommands.length]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       const cursorPos = e.target.selectionStart;
       setMessage(newValue);
+
+      // Check for / command at the start
+      if (newValue.startsWith("/")) {
+        const query = newValue.slice(1).split(" ")[0]; // Get text after / until first space
+        const hasSpace = newValue.indexOf(" ") !== -1;
+        
+        if (!hasSpace) {
+          setCommandState({
+            isActive: true,
+            query: query,
+          });
+          // Close mention if command is active
+          if (mentionState.isActive) {
+            setMentionState({ isActive: false, startIndex: -1, query: "" });
+          }
+          return;
+        }
+      }
+
+      // Close command state if not starting with /
+      if (commandState.isActive) {
+        setCommandState({ isActive: false, query: "" });
+      }
 
       // Check for @ mention
       const textBeforeCursor = newValue.slice(0, cursorPos);
@@ -111,7 +148,7 @@ export const MessageInput = memo(function MessageInput({
         });
       }
     },
-    [mentionState.isActive]
+    [mentionState.isActive, commandState.isActive]
   );
 
   const handleSelectFile = useCallback(
@@ -142,12 +179,35 @@ export const MessageInput = memo(function MessageInput({
     [message, mentionState]
   );
 
+  const handleSelectCommand = useCallback(
+    (command: Command) => {
+      // Clear the input and close popover
+      setMessage("");
+      setCommandState({ isActive: false, query: "" });
+
+      // Execute the command
+      if (onCommand) {
+        onCommand(command);
+      }
+
+      // Refocus the textarea
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+    },
+    [onCommand]
+  );
+
   const closeMention = useCallback(() => {
     setMentionState({
       isActive: false,
       startIndex: -1,
       query: "",
     });
+  }, []);
+
+  const closeCommand = useCallback(() => {
+    setCommandState({ isActive: false, query: "" });
   }, []);
 
   const handlePaste = useCallback(
@@ -193,7 +253,8 @@ export const MessageInput = memo(function MessageInput({
   }, []);
 
   const handleSubmit = () => {
-    if ((!message.trim() && images.length === 0) || isLoading || disabled) return;
+    // Block if no content or explicitly disabled
+    if ((!message.trim() && images.length === 0) || disabled) return;
     onSendMessage(message.trim(), images.length > 0 ? images : undefined);
     setMessage("");
     setImages([]);
@@ -201,7 +262,7 @@ export const MessageInput = memo(function MessageInput({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Handle Escape to abort when busy
-    if (e.key === "Escape" && !mentionState.isActive) {
+    if (e.key === "Escape" && !mentionState.isActive && !commandState.isActive) {
       if (isBusy && onAbort) {
         e.preventDefault();
         onAbort();
@@ -209,10 +270,43 @@ export const MessageInput = memo(function MessageInput({
       }
     }
 
-    // Handle Tab to toggle mode (only when not in mention and not busy)
-    if (e.key === "Tab" && !mentionState.isActive && onToggleMode) {
+    // Handle Tab to toggle mode (only when not in mention/command and not busy)
+    if (e.key === "Tab" && !mentionState.isActive && !commandState.isActive && onToggleMode) {
       e.preventDefault();
       onToggleMode();
+      return;
+    }
+
+    // Handle command navigation
+    if (commandState.isActive && filteredCommands.length > 0) {
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev + 1) % filteredCommands.length);
+          return;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+          return;
+        case "Enter":
+          e.preventDefault();
+          handleSelectCommand(filteredCommands[selectedIndex]);
+          return;
+        case "Escape":
+          e.preventDefault();
+          closeCommand();
+          return;
+        case "Tab":
+          e.preventDefault();
+          handleSelectCommand(filteredCommands[selectedIndex]);
+          return;
+      }
+    }
+
+    // Handle Escape to close command popover even when no commands match
+    if (commandState.isActive && e.key === "Escape") {
+      e.preventDefault();
+      closeCommand();
       return;
     }
 
@@ -291,6 +385,7 @@ export const MessageInput = memo(function MessageInput({
 
       <div className="relative flex gap-2 items-start">
         <div className="relative flex-1">
+          {/* File mention popover */}
           <FileMentionPopover
             isOpen={mentionState.isActive}
             files={files}
@@ -298,6 +393,14 @@ export const MessageInput = memo(function MessageInput({
             selectedIndex={selectedIndex}
             onSelect={handleSelectFile}
             onClose={closeMention}
+          />
+          {/* Command popover */}
+          <CommandPopover
+            isOpen={commandState.isActive}
+            commands={filteredCommands}
+            selectedIndex={selectedIndex}
+            onSelect={handleSelectCommand}
+            onClose={closeCommand}
           />
           <Textarea
             ref={textareaRef}
@@ -313,15 +416,12 @@ export const MessageInput = memo(function MessageInput({
         </div>
         <Button
           onClick={handleSubmit}
-          disabled={!hasContent || isLoading || disabled}
+          disabled={!hasContent || disabled}
           size="icon"
           className="shrink-0 h-[44px] w-[44px]"
+          title={isBusy ? "Message will be queued" : undefined}
         >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
+          <Send className="h-4 w-4" />
           <span className="sr-only">Send message</span>
         </Button>
       </div>
@@ -369,13 +469,17 @@ export const MessageInput = memo(function MessageInput({
         
         {/* Hints */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground sm:ml-auto">
-          <span>Enter send</span>
+          <span>/ commands</span>
+          <span className="text-muted-foreground/50">·</span>
+          <span>@ files</span>
           <span className="text-muted-foreground/50">·</span>
           <span>Tab mode</span>
           {isBusy && (
             <>
               <span className="text-muted-foreground/50">·</span>
               <span>Esc cancel</span>
+              <span className="text-muted-foreground/50">·</span>
+              <span className="text-primary">queues</span>
             </>
           )}
           <span className="text-muted-foreground/50">·</span>

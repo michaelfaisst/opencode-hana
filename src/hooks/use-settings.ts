@@ -10,6 +10,7 @@ export interface SelectedModel {
 export interface AppSettings {
   defaultModel: SelectedModel | null;
   agentMode: AgentMode;
+  replaceSessionOnNew: boolean;
 }
 
 const SETTINGS_KEY = "opencode-settings";
@@ -17,6 +18,7 @@ const SETTINGS_KEY = "opencode-settings";
 const defaultSettings: AppSettings = {
   defaultModel: null,
   agentMode: "build",
+  replaceSessionOnNew: false,
 };
 
 function loadSettings(): AppSettings {
@@ -63,9 +65,14 @@ export function useSettings() {
     setSettings({ agentMode: mode });
   }, [setSettings]);
 
+  const setReplaceSessionOnNew = useCallback((replace: boolean) => {
+    setSettings({ replaceSessionOnNew: replace });
+  }, [setSettings]);
+
   return {
     settings,
     setDefaultModel,
     setAgentMode,
+    setReplaceSessionOnNew,
   };
 }

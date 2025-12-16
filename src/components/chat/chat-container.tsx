@@ -6,7 +6,7 @@ import { StreamingIndicator } from "./streaming-indicator";
 import { ChatSidebar } from "./chat-sidebar";
 import { type SelectedModel } from "@/components/common";
 import { Button } from "@/components/ui/button";
-import { useProviders, useSettings, type ImageAttachment } from "@/hooks";
+import { useProviders, useSettings, type ImageAttachment, type Command } from "@/hooks";
 
 interface Part {
   type: string;
@@ -71,6 +71,7 @@ interface ChatContainerProps {
   retryStatus?: RetryStatus;
   onSendMessage: (message: string, images?: ImageAttachment[]) => void;
   onAbort?: () => void;
+  onCommand?: (command: Command) => void;
   selectedModel?: SelectedModel;
   onModelChange?: (model: SelectedModel) => void;
 }
@@ -84,6 +85,7 @@ export function ChatContainer({
   retryStatus,
   onSendMessage,
   onAbort,
+  onCommand,
   selectedModel,
   onModelChange,
 }: ChatContainerProps) {
@@ -216,7 +218,7 @@ export function ChatContainer({
             onSendMessage={handleSendMessage}
             onAbort={onAbort}
             onToggleMode={handleToggleMode}
-            isLoading={isSending}
+            onCommand={onCommand}
             isBusy={isBusy}
             agentMode={settings.agentMode}
             selectedModel={selectedModel}
@@ -226,8 +228,14 @@ export function ChatContainer({
       </div>
       
       {/* Sidebar - hidden on small screens */}
-      <div className="hidden lg:block w-72 shrink-0">
-        <ChatSidebar messages={sidebarMessages} contextLimit={contextLimit} />
+      <div className="hidden lg:block shrink-0">
+        <ChatSidebar 
+          messages={sidebarMessages} 
+          contextLimit={contextLimit}
+          onCommand={onCommand}
+          hasSession={true}
+          isBusy={isBusy || isSending}
+        />
       </div>
     </div>
   );

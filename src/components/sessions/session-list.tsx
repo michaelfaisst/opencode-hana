@@ -43,10 +43,14 @@ export function SessionList({
   // Cast sessions to include optional timestamp fields from API response
   const sessionsWithTimestamps = sessions as SessionWithTimestamps[];
   
-  // Sort by updatedAt descending (most recent first), fallback to id if no timestamp
+  // Sort by most recent timestamp (createdAt or updatedAt, whichever is newer)
   const sortedSessions = [...sessionsWithTimestamps].sort((a, b) => {
-    const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-    const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+    const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const aUpdated = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+    const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    const bUpdated = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+    const aTime = Math.max(aCreated, aUpdated);
+    const bTime = Math.max(bCreated, bUpdated);
     return bTime - aTime;
   });
 

@@ -8,3 +8,5 @@ export { StreamingIndicator } from "./streaming-indicator";
 export { DiffViewer, UnifiedDiffViewer } from "./diff-viewer";
 export { TodoList, InlineTodoList } from "./todo-list";
 export { FileMentionPopover } from "./file-mention-popover";
+export { CommandPopover } from "./command-popover";
+export { CommandToolbar } from "./command-toolbar";
