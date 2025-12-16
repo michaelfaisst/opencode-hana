@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FileMentionPopover } from "./file-mention-popover";
 import { CommandPopover } from "./command-popover";
+import { ImageLightbox } from "./image-lightbox";
 import { useFileSearch } from "@/hooks/use-file-search";
 import { filterCommands, type Command } from "@/hooks/use-commands";
 import { ModelSelector, type SelectedModel } from "@/components/common";
@@ -50,6 +51,7 @@ export const MessageInput = memo(function MessageInput({
   const [message, setMessage] = useState("");
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [lightboxImage, setLightboxImage] = useState<ImageAttachment | null>(null);
   const [mentionState, setMentionState] = useState<MentionState>({
     isActive: false,
     startIndex: -1,
@@ -190,10 +192,12 @@ export const MessageInput = memo(function MessageInput({
         onCommand(command);
       }
 
-      // Refocus the textarea
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 0);
+      // Refocus the textarea unless the command opens a dialog
+      if (!command.opensDialog) {
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 0);
+      }
     },
     [onCommand]
   );
@@ -362,18 +366,24 @@ export const MessageInput = memo(function MessageInput({
               key={image.id}
               className="relative group rounded-md overflow-hidden border bg-muted"
             >
-              <img
-                src={image.dataUrl}
-                alt={image.file.name}
-                className="h-20 w-20 object-cover"
-              />
+              <button
+                type="button"
+                onClick={() => setLightboxImage(image)}
+                className="block cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                <img
+                  src={image.dataUrl}
+                  alt={image.file.name}
+                  className="h-20 w-20 object-cover"
+                />
+              </button>
               <button
                 onClick={() => removeImage(image.id)}
                 className="absolute top-1 right-1 p-0.5 rounded-full bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
               >
                 <X className="h-3 w-3" />
               </button>
-              <div className="absolute bottom-0 left-0 right-0 bg-background/80 px-1 py-0.5">
+              <div className="absolute bottom-0 left-0 right-0 bg-background/80 px-1 py-0.5 pointer-events-none">
                 <span className="text-[10px] text-muted-foreground truncate block">
                   {image.file.name}
                 </span>
@@ -382,6 +392,14 @@ export const MessageInput = memo(function MessageInput({
           ))}
         </div>
       )}
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        open={!!lightboxImage}
+        onOpenChange={(open) => !open && setLightboxImage(null)}
+        src={lightboxImage?.dataUrl || ""}
+        alt={lightboxImage?.file.name}
+      />
 
       <div className="relative flex gap-2 items-start">
         <div className="relative flex-1">

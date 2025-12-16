@@ -203,7 +203,9 @@ export function useEvents() {
 
     eventSource.onopen = () => {
       console.log("[Events] EventSource connected");
-      setState((prev) => ({ ...prev, isConnected: true }));
+      // Clear all session statuses on reconnect - assume idle until we hear otherwise
+      // This prevents stale "busy" states from persisting after reconnection
+      setState({ isConnected: true, sessionStatuses: new Map() });
     };
 
     eventSource.onmessage = (event) => {

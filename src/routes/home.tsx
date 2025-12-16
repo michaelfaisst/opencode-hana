@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MessageSquare, Plus } from "lucide-react";
 import { Header } from "@/components/layout/header";
-import { ChatContainer, SessionsSidebar } from "@/components/chat";
+import { ChatContainer, SessionsSidebar, RenameSessionDialog } from "@/components/chat";
 import { CreateSessionDialog } from "@/components/sessions";
 import { type SelectedModel } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   useSessions,
   useCreateSession,
   useDeleteSession,
+  useRenameSession,
   useMessages,
   useSendMessage,
   useAbortSession,
@@ -22,6 +23,7 @@ import {
   useSessionCommand,
   useCopySession,
   useShareSession,
+  useExportSession,
   SessionNotFoundError,
   type ImageAttachment,
   type Command,
@@ -49,6 +51,10 @@ export function HomePage() {
   const { data: sessions = [], isLoading: isLoadingSessions } = useSessions();
   const createSession = useCreateSession();
   const deleteSession = useDeleteSession();
+  const renameSession = useRenameSession();
+
+  // Rename dialog state
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
 
   // Sort sessions by updatedAt descending
   const sortedSessions = useMemo(() => {
@@ -116,9 +122,30 @@ export function HomePage() {
   );
   const sendMessage = useSendMessage();
   const abortSession = useAbortSession();
-  const { isBusy, isRetrying, status } = useSessionStatusFromContext(
+  const { isBusy: isBusyFromSSE, isRetrying, status } = useSessionStatusFromContext(
     activeSessionId || ""
   );
+
+  // Detect if the session is actually busy based on message content
+  // This serves as a fallback/verification when SSE events might be stale
+  const hasActiveToolParts = useMemo(() => {
+    if (messages.length === 0) return false;
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.info.role !== "assistant") return false;
+    
+    // Check if any tool parts are pending or running
+    return lastMessage.parts.some(
+      (part: { type: string; state?: { status?: string } }) => 
+        part.type === "tool" && 
+        (part.state?.status === "pending" || part.state?.status === "running")
+    );
+  }, [messages]);
+
+  // Determine busy state:
+  // - If SSE says busy AND we have active tool parts -> busy
+  // - If SSE says busy but no active tool parts -> likely stale, treat as not busy
+  // - If SSE says idle but we have active tool parts -> trust the tool parts (rare edge case)
+  const isBusy = hasActiveToolParts || (isBusyFromSSE && messages.length === 0);
 
   // Command hooks
   const revertSession = useRevertSession();
@@ -127,6 +154,7 @@ export function HomePage() {
   const sessionCommand = useSessionCommand();
   const copySession = useCopySession();
   const shareSession = useShareSession();
+  const exportSession = useExportSession();
 
   // Handle session not found - navigate to root to auto-select another
   useEffect(() => {
@@ -256,12 +284,18 @@ export function HomePage() {
         }
 
         case "export": {
-          const shareResult = await shareSession.mutateAsync({ sessionId: activeSessionId });
-          if (shareResult?.share?.url) {
-            await navigator.clipboard.writeText(shareResult.share.url);
-            console.log("Share URL copied:", shareResult.share.url);
-            window.open(shareResult.share.url, "_blank");
+          const exportResult = await exportSession.mutateAsync({
+            sessionId: activeSessionId,
+            sessionTitle: session?.title,
+          });
+          if (exportResult.exported) {
+            console.log(`Exported ${exportResult.messageCount} messages to file`);
           }
+          break;
+        }
+
+        case "rename": {
+          setRenameDialogOpen(true);
           break;
         }
 
@@ -286,7 +320,19 @@ export function HomePage() {
     sessionCommand,
     copySession,
     shareSession,
+    exportSession,
   ]);
+
+  // Handle session rename
+  const handleRenameSession = useCallback(async (newTitle: string) => {
+    if (!activeSessionId) return;
+    try {
+      await renameSession.mutateAsync({ id: activeSessionId, title: newTitle });
+      setRenameDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to rename session:", error);
+    }
+  }, [activeSessionId, renameSession]);
 
   const title = session?.title || (activeSessionId ? `Session ${activeSessionId.slice(0, 8)}` : "OpenCode");
   const hasNoSessions = !isLoadingSessions && sortedSessions.length === 0;
@@ -323,6 +369,15 @@ export function HomePage() {
           )}
         </div>
       </div>
+
+      {/* Rename session dialog */}
+      <RenameSessionDialog
+        open={renameDialogOpen}
+        onOpenChange={setRenameDialogOpen}
+        currentTitle={session?.title}
+        onRename={handleRenameSession}
+        isLoading={renameSession.isPending}
+      />
     </div>
   );
 }

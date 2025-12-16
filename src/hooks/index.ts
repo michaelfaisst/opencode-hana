@@ -1,4 +1,4 @@
-export { useSessions, useSession, useCreateSession, useDeleteSession, removeWebSessionId, getWebSessionInfo, SessionNotFoundError } from "./use-sessions";
+export { useSessions, useSession, useCreateSession, useDeleteSession, useRenameSession, removeWebSessionId, getWebSessionInfo, SessionNotFoundError } from "./use-sessions";
 export { useMessages, useSendMessage, useAbortSession, type ImageAttachment } from "./use-messages";
 export { useProviders } from "./use-providers";
 export { useProjects, useCurrentProject, getProjectName, type Project } from "./use-projects";
@@ -14,5 +14,6 @@ export {
   useSessionCommand,
   useShareSession,
   useCopySession,
+  useExportSession,
   type Command,
 } from "./use-commands";

@@ -10,3 +10,5 @@ export { TodoList, InlineTodoList } from "./todo-list";
 export { FileMentionPopover } from "./file-mention-popover";
 export { CommandPopover } from "./command-popover";
 export { CommandToolbar } from "./command-toolbar";
+export { RenameSessionDialog } from "./rename-session-dialog";
+export { ImageLightbox } from "./image-lightbox";

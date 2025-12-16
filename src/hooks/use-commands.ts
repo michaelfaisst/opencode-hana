@@ -10,6 +10,7 @@ import {
   Minimize2,
   Copy,
   Share2,
+  Pencil,
   type LucideIcon,
 } from "lucide-react";
 
@@ -33,6 +34,8 @@ export interface Command {
   requiresMessages?: boolean;
   /** Whether the command can be shown as a toolbar button */
   showInToolbar: boolean;
+  /** Whether the command opens a dialog (prevents refocusing input) */
+  opensDialog?: boolean;
 }
 
 /**
@@ -97,6 +100,15 @@ export const COMMANDS: Command[] = [
     icon: Share2,
     requiresSession: true,
     showInToolbar: false,
+  },
+  {
+    name: "rename",
+    label: "Rename",
+    description: "Rename the current session",
+    icon: Pencil,
+    requiresSession: true,
+    showInToolbar: true,
+    opensDialog: true,
   },
 ];
 
@@ -326,6 +338,75 @@ export function useCopySession() {
       // Copy to clipboard
       await navigator.clipboard.writeText(formatted);
       return { copied: true, messageCount: messages.length };
+    },
+  });
+}
+
+/**
+ * Hook to export session transcript to a file
+ */
+export function useExportSession() {
+  const client = useOpencodeClient();
+
+  return useMutation({
+    mutationFn: async ({
+      sessionId,
+      sessionTitle,
+    }: {
+      sessionId: string;
+      sessionTitle?: string;
+    }) => {
+      const sessionInfo = getWebSessionInfo(sessionId);
+      const response = await client.session.messages({
+        path: { id: sessionId },
+        query: { directory: sessionInfo?.directory },
+      });
+      if (response.error) {
+        throw new Error("Failed to get session messages");
+      }
+
+      // Format messages for export
+      const messages = response.data || [];
+      const title = sessionTitle || `Session ${sessionId.slice(0, 8)}`;
+      const exportDate = new Date().toISOString();
+
+      const formatted = [
+        `# ${title}`,
+        ``,
+        `*Exported on ${new Date(exportDate).toLocaleString()}*`,
+        ``,
+        `---`,
+        ``,
+        ...messages.map((msg) => {
+          const role = msg.info.role === "user" ? "User" : "Assistant";
+          const content = msg.parts
+            .map((part) => {
+              if (part.type === "text") {
+                return part.text;
+              }
+              if (part.type === "tool") {
+                return `\`[Tool: ${part.tool}]\``;
+              }
+              return "";
+            })
+            .filter(Boolean)
+            .join("\n");
+          return `## ${role}\n\n${content}\n\n---\n`;
+        }),
+      ].join("\n");
+
+      // Create and download the file
+      const blob = new Blob([formatted], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${title.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-${sessionId.slice(0, 8)}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      return { exported: true, messageCount: messages.length };
     },
   });
 }

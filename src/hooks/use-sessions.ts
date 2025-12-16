@@ -195,3 +195,27 @@ export function useDeleteSession() {
     },
   });
 }
+
+export function useRenameSession() {
+  const client = useOpencodeClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      const sessionInfo = getWebSessionInfo(id);
+      const response = await client.session.update({
+        path: { id },
+        query: { directory: sessionInfo?.directory },
+        body: { title },
+      });
+      if (response.error) {
+        throw new Error("Failed to rename session");
+      }
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sessions });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session(variables.id) });
+    },
+  });
+}
