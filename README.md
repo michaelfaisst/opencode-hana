@@ -75,10 +75,6 @@ src/
 └── lib/              # Utilities and SDK client
 ```
 
-## Development
-
-See [plan.md](./plan.md) for the full implementation plan and checklist.
-
 ## License
 
 MIT
