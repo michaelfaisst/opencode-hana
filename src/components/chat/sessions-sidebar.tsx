@@ -10,8 +10,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { getProjectName, getTimeAgoShort } from "@/lib/format";
 import { useSessions, useCreateSession, useDeleteSession } from "@/hooks";
 import { CreateSessionDialog } from "@/components/sessions";
 import { useEventsContext } from "@/providers/events-provider";
@@ -30,6 +35,7 @@ interface SessionsSidebarProps {
   currentDirectory?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function SessionsSidebar(_props: SessionsSidebarProps) {
   const navigate = useNavigate();
   const { id: currentSessionId } = useParams<{ id: string }>();
@@ -97,11 +103,14 @@ export function SessionsSidebar(_props: SessionsSidebarProps) {
         // If we're deleting the current session, find another session to navigate to
         if (sessionId === currentSessionId) {
           // Find the next session to navigate to (prefer the one below, then above)
-          const currentIndex = sortedSessions.findIndex(s => s.id === sessionId);
-          const nextSession = sortedSessions[currentIndex + 1] || sortedSessions[currentIndex - 1];
-          
+          const currentIndex = sortedSessions.findIndex(
+            (s) => s.id === sessionId
+          );
+          const nextSession =
+            sortedSessions[currentIndex + 1] || sortedSessions[currentIndex - 1];
+
           await deleteSession.mutateAsync(sessionId);
-          
+
           if (nextSession) {
             navigate(`/sessions/${nextSession.id}`);
           } else {
@@ -139,7 +148,12 @@ export function SessionsSidebar(_props: SessionsSidebarProps) {
             Sessions
           </span>
         )}
-        <div className={cn("flex items-center gap-1", isCollapsed && "w-full justify-center")}>
+        <div
+          className={cn(
+            "flex items-center gap-1",
+            isCollapsed && "w-full justify-center"
+          )}
+        >
           {!isCollapsed && (
             <Button
               variant="ghost"
@@ -193,15 +207,20 @@ export function SessionsSidebar(_props: SessionsSidebarProps) {
             {sortedSessions.slice(0, 10).map((session) => {
               const status = sessionStatuses.get(session.id);
               const isBusy = status?.type === "busy";
-              const displayTitle = session.title || `Session ${session.id.slice(0, 8)}`;
-              const projectName = session.directory ? getProjectName(session.directory) : null;
+              const displayTitle =
+                session.title || `Session ${session.id.slice(0, 8)}`;
+              const projectName = session.directory
+                ? getProjectName(session.directory)
+                : null;
               return (
                 <Tooltip key={session.id}>
                   <TooltipTrigger
                     render={(props) => (
                       <Button
                         {...props}
-                        variant={session.id === currentSessionId ? "secondary" : "ghost"}
+                        variant={
+                          session.id === currentSessionId ? "secondary" : "ghost"
+                        }
                         size="icon"
                         className="h-8 w-8 relative"
                         onClick={() => handleSessionClick(session.id)}
@@ -275,11 +294,19 @@ interface SessionItemProps {
   onDelete: (e: React.MouseEvent) => void;
 }
 
-function SessionItem({ session, isActive, isBusy, onClick, onDelete }: SessionItemProps) {
+function SessionItem({
+  session,
+  isActive,
+  isBusy,
+  onClick,
+  onDelete,
+}: SessionItemProps) {
   const displayTitle = session.title || `Session ${session.id.slice(0, 8)}`;
-  const projectName = session.directory ? getProjectName(session.directory) : null;
+  const projectName = session.directory
+    ? getProjectName(session.directory)
+    : null;
   const updatedDate = session.updatedAt ? new Date(session.updatedAt) : null;
-  const timeAgo = updatedDate ? getTimeAgo(updatedDate) : null;
+  const timeAgo = updatedDate ? getTimeAgoShort(updatedDate) : null;
 
   return (
     <button
@@ -322,25 +349,4 @@ function SessionItem({ session, isActive, isBusy, onClick, onDelete }: SessionIt
       </Button>
     </button>
   );
-}
-
-function getProjectName(directory: string): string {
-  if (directory === "/") return "global";
-  const parts = directory.split("/").filter(Boolean);
-  return parts[parts.length - 1] || directory;
-}
-
-function getTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m`;
-  if (diffHours < 24) return `${diffHours}h`;
-  if (diffDays < 7) return `${diffDays}d`;
-
-  return date.toLocaleDateString();
 }

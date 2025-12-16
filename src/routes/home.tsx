@@ -141,11 +141,31 @@ export function HomePage() {
     );
   }, [messages]);
 
+  // Check if we're waiting for an assistant response (last message is from user)
+  const isWaitingForResponse = useMemo(() => {
+    if (messages.length === 0) return false;
+    const lastMessage = messages[messages.length - 1];
+    return lastMessage.info.role === "user";
+  }, [messages]);
+
   // Determine busy state:
-  // - If SSE says busy AND we have active tool parts -> busy
-  // - If SSE says busy but no active tool parts -> likely stale, treat as not busy
-  // - If SSE says idle but we have active tool parts -> trust the tool parts (rare edge case)
-  const isBusy = hasActiveToolParts || (isBusyFromSSE && messages.length === 0);
+  // - If there are active tool parts (pending/running) -> definitely busy
+  // - If last message is from user -> busy (waiting for assistant response)
+  // - If SSE says busy AND we have no messages yet -> busy (initial state)
+  // - If SSE says busy but last message is complete assistant message -> SSE is stale, not busy
+  const isBusy = hasActiveToolParts || isWaitingForResponse || (isBusyFromSSE && messages.length === 0);
+
+  // Debug logging for busy state
+  useEffect(() => {
+    console.log('[BusyState]', {
+      isBusy,
+      hasActiveToolParts,
+      isWaitingForResponse,
+      isBusyFromSSE,
+      messagesLength: messages.length,
+      lastMessageRole: messages.length > 0 ? messages[messages.length - 1].info.role : 'none',
+    });
+  }, [isBusy, hasActiveToolParts, isWaitingForResponse, isBusyFromSSE, messages]);
 
   // Command hooks
   const revertSession = useRevertSession();
@@ -276,21 +296,15 @@ export function HomePage() {
         }
 
         case "copy": {
-          const result = await copySession.mutateAsync({ sessionId: activeSessionId });
-          if (result.copied) {
-            console.log(`Copied ${result.messageCount} messages to clipboard`);
-          }
+          await copySession.mutateAsync({ sessionId: activeSessionId });
           break;
         }
 
         case "export": {
-          const exportResult = await exportSession.mutateAsync({
+          await exportSession.mutateAsync({
             sessionId: activeSessionId,
             sessionTitle: session?.title,
           });
-          if (exportResult.exported) {
-            console.log(`Exported ${exportResult.messageCount} messages to file`);
-          }
           break;
         }
 

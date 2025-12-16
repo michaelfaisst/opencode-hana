@@ -126,11 +126,11 @@ export function ChatContainer({
   useEffect(() => {
     if (!isBusy && !isSending && messageQueue.length > 0 && !processingRef.current) {
       processingRef.current = true;
-      const [nextMessage, ...rest] = messageQueue;
-      setMessageQueue(rest);
+      const nextMessage = messageQueue[0];
       
-      // Small delay to let the UI update
+      // Small delay to let the UI update, then update state and send
       setTimeout(() => {
+        setMessageQueue(prev => prev.slice(1));
         onSendMessage(nextMessage.text, nextMessage.images);
         processingRef.current = false;
       }, 100);

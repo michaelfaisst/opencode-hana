@@ -45,10 +45,9 @@ export function ModelSelector({
   const { data, isLoading } = useProviders();
   const [inputValue, setInputValue] = useState("");
 
-  const providers = data?.providers ?? [];
-
   // Build flat list of model options
   const allModels = useMemo<ModelOption[]>(() => {
+    const providers = data?.providers ?? [];
     const models: ModelOption[] = [];
 
     for (const provider of providers) {
@@ -66,7 +65,7 @@ export function ModelSelector({
     }
 
     return models;
-  }, [providers]);
+  }, [data?.providers]);
 
   // Create a map for quick lookup of labels by value
   const valueToLabelMap = useMemo(() => {
@@ -137,7 +136,7 @@ export function ModelSelector({
     );
   }
 
-  if (providers.length === 0) {
+  if (!data?.providers || data.providers.length === 0) {
     return (
       <Button variant="outline" size="sm" disabled className={cn("min-w-[280px]", className)}>
         <Bot className="h-4 w-4 mr-2" />

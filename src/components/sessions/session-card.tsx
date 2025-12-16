@@ -1,8 +1,14 @@
 import { Link } from "react-router-dom";
 import { MessageSquare, Trash2, Folder } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getProjectName, getTimeAgo } from "@/lib/format";
 
 interface SessionCardProps {
   id: string;
@@ -10,16 +16,6 @@ interface SessionCardProps {
   directory?: string;
   updatedAt?: string;
   onDelete?: (id: string) => void;
-}
-
-/**
- * Get a display name from a directory path
- * e.g., "/Users/michaelfaisst/Work/Private/opencode-web" -> "opencode-web"
- */
-function getProjectName(directory: string): string {
-  if (directory === "/") return "global";
-  const parts = directory.split("/").filter(Boolean);
-  return parts[parts.length - 1] || directory;
 }
 
 export function SessionCard({
@@ -77,19 +73,4 @@ export function SessionCard({
       )}
     </Card>
   );
-}
-
-function getTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  return date.toLocaleDateString();
 }

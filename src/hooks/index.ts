@@ -5,6 +5,7 @@ export { useProjects, useCurrentProject, getProjectName, type Project } from "./
 export { useEvents } from "./use-events";
 export { useSettings, type SelectedModel, type AgentMode, type AppSettings } from "./use-settings";
 export { useFileSearch } from "./use-file-search";
+export { useInputHistory } from "./use-input-history";
 export {
   COMMANDS,
   filterCommands,

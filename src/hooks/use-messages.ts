@@ -10,7 +10,6 @@ export function useMessages(sessionId: string) {
   return useQuery({
     queryKey: QUERY_KEYS.messages(sessionId),
     queryFn: async () => {
-      console.log("[Messages] Fetching messages for session:", sessionId);
       const sessionInfo = getWebSessionInfo(sessionId);
       const response = await client.session.messages({
         path: { id: sessionId },
@@ -19,7 +18,6 @@ export function useMessages(sessionId: string) {
       if (response.error) {
         throw new Error("Failed to fetch messages");
       }
-      console.log("[Messages] Received", response.data?.length ?? 0, "messages");
       return response.data ?? [];
     },
     enabled: !!sessionId,

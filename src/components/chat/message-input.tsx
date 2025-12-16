@@ -1,16 +1,18 @@
-import { useState, useRef, useEffect, useCallback, memo } from "react";
-import { Send, X, Image as ImageIcon, Lightbulb, Hammer } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, memo, useMemo } from "react";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FileMentionPopover } from "./file-mention-popover";
 import { CommandPopover } from "./command-popover";
 import { ImageLightbox } from "./image-lightbox";
+import { ImagePreviewGrid } from "./message-input/image-preview-grid";
+import { InputControlsRow } from "./message-input/input-controls-row";
 import { useFileSearch } from "@/hooks/use-file-search";
+import { useInputHistory } from "@/hooks/use-input-history";
 import { filterCommands, type Command } from "@/hooks/use-commands";
-import { ModelSelector, type SelectedModel } from "@/components/common";
+import type { SelectedModel } from "@/components/common";
 import type { ImageAttachment } from "@/hooks/use-messages";
 import type { AgentMode } from "@/hooks/use-settings";
-import { cn } from "@/lib/utils";
 
 interface MessageInputProps {
   onSendMessage: (message: string, images?: ImageAttachment[]) => void;
@@ -51,7 +53,9 @@ export const MessageInput = memo(function MessageInput({
   const [message, setMessage] = useState("");
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [lightboxImage, setLightboxImage] = useState<ImageAttachment | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<ImageAttachment | null>(
+    null
+  );
   const [mentionState, setMentionState] = useState<MentionState>({
     isActive: false,
     startIndex: -1,
@@ -64,10 +68,39 @@ export const MessageInput = memo(function MessageInput({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { files, isLoading: isSearching, searchFiles, clearFiles } = useFileSearch();
+  const {
+    files,
+    isLoading: isSearching,
+    searchFiles,
+    clearFiles,
+  } = useFileSearch();
+
+  // Input history for arrow key navigation
+  const {
+    addToHistory,
+    navigateUp,
+    navigateDown,
+    resetNavigation,
+    isNavigating,
+    historyLength,
+  } = useInputHistory();
 
   // Filter commands based on query
-  const filteredCommands = commandState.isActive ? filterCommands(commandState.query) : [];
+  const filteredCommands = commandState.isActive
+    ? filterCommands(commandState.query)
+    : [];
+
+  // Compute effective selected index, clamped to valid range
+  // This avoids needing to reset state when lists change
+  const effectiveSelectedIndex = useMemo(() => {
+    if (commandState.isActive && filteredCommands.length > 0) {
+      return Math.min(selectedIndex, filteredCommands.length - 1);
+    }
+    if (mentionState.isActive && files.length > 0) {
+      return Math.min(selectedIndex, files.length - 1);
+    }
+    return 0;
+  }, [selectedIndex, commandState.isActive, mentionState.isActive, filteredCommands.length, files.length]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -87,22 +120,22 @@ export const MessageInput = memo(function MessageInput({
     }
   }, [mentionState.isActive, mentionState.query, searchFiles, clearFiles]);
 
-  // Reset selected index when files or commands change
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [files, filteredCommands.length]);
-
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       const cursorPos = e.target.selectionStart;
       setMessage(newValue);
 
+      // Reset history navigation when user types
+      if (isNavigating) {
+        resetNavigation();
+      }
+
       // Check for / command at the start
       if (newValue.startsWith("/")) {
         const query = newValue.slice(1).split(" ")[0]; // Get text after / until first space
         const hasSpace = newValue.indexOf(" ") !== -1;
-        
+
         if (!hasSpace) {
           setCommandState({
             isActive: true,
@@ -150,7 +183,12 @@ export const MessageInput = memo(function MessageInput({
         });
       }
     },
-    [mentionState.isActive, commandState.isActive]
+    [
+      mentionState.isActive,
+      commandState.isActive,
+      isNavigating,
+      resetNavigation,
+    ]
   );
 
   const handleSelectFile = useCallback(
@@ -214,43 +252,40 @@ export const MessageInput = memo(function MessageInput({
     setCommandState({ isActive: false, query: "" });
   }, []);
 
-  const handlePaste = useCallback(
-    async (e: React.ClipboardEvent) => {
-      const items = e.clipboardData.items;
-      const imageItems: DataTransferItem[] = [];
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    const imageItems: DataTransferItem[] = [];
 
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith("image/")) {
-          imageItems.push(items[i]);
-        }
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith("image/")) {
+        imageItems.push(items[i]);
       }
+    }
 
-      if (imageItems.length === 0) return;
+    if (imageItems.length === 0) return;
 
-      // Prevent default paste behavior for images
-      e.preventDefault();
+    // Prevent default paste behavior for images
+    e.preventDefault();
 
-      for (const item of imageItems) {
-        const file = item.getAsFile();
-        if (!file) continue;
+    for (const item of imageItems) {
+      const file = item.getAsFile();
+      if (!file) continue;
 
-        // Convert to data URL
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          const newImage: ImageAttachment = {
-            id: crypto.randomUUID(),
-            file,
-            dataUrl,
-            mime: file.type,
-          };
-          setImages((prev) => [...prev, newImage]);
+      // Convert to data URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const newImage: ImageAttachment = {
+          id: crypto.randomUUID(),
+          file,
+          dataUrl,
+          mime: file.type,
         };
-        reader.readAsDataURL(file);
-      }
-    },
-    []
-  );
+        setImages((prev) => [...prev, newImage]);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
 
   const removeImage = useCallback((id: string) => {
     setImages((prev) => prev.filter((img) => img.id !== id));
@@ -259,6 +294,12 @@ export const MessageInput = memo(function MessageInput({
   const handleSubmit = () => {
     // Block if no content or explicitly disabled
     if ((!message.trim() && images.length === 0) || disabled) return;
+
+    // Add to input history before sending
+    if (message.trim()) {
+      addToHistory(message.trim());
+    }
+
     onSendMessage(message.trim(), images.length > 0 ? images : undefined);
     setMessage("");
     setImages([]);
@@ -266,7 +307,11 @@ export const MessageInput = memo(function MessageInput({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Handle Escape to abort when busy
-    if (e.key === "Escape" && !mentionState.isActive && !commandState.isActive) {
+    if (
+      e.key === "Escape" &&
+      !mentionState.isActive &&
+      !commandState.isActive
+    ) {
       if (isBusy && onAbort) {
         e.preventDefault();
         onAbort();
@@ -275,7 +320,12 @@ export const MessageInput = memo(function MessageInput({
     }
 
     // Handle Tab to toggle mode (only when not in mention/command and not busy)
-    if (e.key === "Tab" && !mentionState.isActive && !commandState.isActive && onToggleMode) {
+    if (
+      e.key === "Tab" &&
+      !mentionState.isActive &&
+      !commandState.isActive &&
+      onToggleMode
+    ) {
       e.preventDefault();
       onToggleMode();
       return;
@@ -290,11 +340,14 @@ export const MessageInput = memo(function MessageInput({
           return;
         case "ArrowUp":
           e.preventDefault();
-          setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+          setSelectedIndex(
+            (prev) =>
+              (prev - 1 + filteredCommands.length) % filteredCommands.length
+          );
           return;
         case "Enter":
           e.preventDefault();
-          handleSelectCommand(filteredCommands[selectedIndex]);
+          handleSelectCommand(filteredCommands[effectiveSelectedIndex]);
           return;
         case "Escape":
           e.preventDefault();
@@ -302,7 +355,7 @@ export const MessageInput = memo(function MessageInput({
           return;
         case "Tab":
           e.preventDefault();
-          handleSelectCommand(filteredCommands[selectedIndex]);
+          handleSelectCommand(filteredCommands[effectiveSelectedIndex]);
           return;
       }
     }
@@ -327,7 +380,7 @@ export const MessageInput = memo(function MessageInput({
           return;
         case "Enter":
           e.preventDefault();
-          handleSelectFile(files[selectedIndex]);
+          handleSelectFile(files[effectiveSelectedIndex]);
           return;
         case "Escape":
           e.preventDefault();
@@ -335,7 +388,7 @@ export const MessageInput = memo(function MessageInput({
           return;
         case "Tab":
           e.preventDefault();
-          handleSelectFile(files[selectedIndex]);
+          handleSelectFile(files[effectiveSelectedIndex]);
           return;
       }
     }
@@ -345,6 +398,27 @@ export const MessageInput = memo(function MessageInput({
       e.preventDefault();
       closeMention();
       return;
+    }
+
+    // Handle input history navigation with arrow keys (only when input is empty or already navigating)
+    if (!mentionState.isActive && !commandState.isActive && historyLength > 0) {
+      if (e.key === "ArrowUp" && (!message.trim() || isNavigating)) {
+        e.preventDefault();
+        const historyMessage = navigateUp(message);
+        if (historyMessage !== undefined) {
+          setMessage(historyMessage);
+        }
+        return;
+      }
+
+      if (e.key === "ArrowDown" && isNavigating) {
+        e.preventDefault();
+        const historyMessage = navigateDown();
+        if (historyMessage !== undefined) {
+          setMessage(historyMessage);
+        }
+        return;
+      }
     }
 
     // Normal enter behavior
@@ -359,39 +433,11 @@ export const MessageInput = memo(function MessageInput({
   return (
     <div className="bg-background p-4">
       {/* Image previews */}
-      {images.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
-          {images.map((image) => (
-            <div
-              key={image.id}
-              className="relative group rounded-md overflow-hidden border bg-muted"
-            >
-              <button
-                type="button"
-                onClick={() => setLightboxImage(image)}
-                className="block cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              >
-                <img
-                  src={image.dataUrl}
-                  alt={image.file.name}
-                  className="h-20 w-20 object-cover"
-                />
-              </button>
-              <button
-                onClick={() => removeImage(image.id)}
-                className="absolute top-1 right-1 p-0.5 rounded-full bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
-              >
-                <X className="h-3 w-3" />
-              </button>
-              <div className="absolute bottom-0 left-0 right-0 bg-background/80 px-1 py-0.5 pointer-events-none">
-                <span className="text-[10px] text-muted-foreground truncate block">
-                  {image.file.name}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <ImagePreviewGrid
+        images={images}
+        onRemove={removeImage}
+        onImageClick={setLightboxImage}
+      />
 
       {/* Image Lightbox */}
       <ImageLightbox
@@ -408,7 +454,7 @@ export const MessageInput = memo(function MessageInput({
             isOpen={mentionState.isActive}
             files={files}
             isLoading={isSearching}
-            selectedIndex={selectedIndex}
+            selectedIndex={effectiveSelectedIndex}
             onSelect={handleSelectFile}
             onClose={closeMention}
           />
@@ -416,7 +462,7 @@ export const MessageInput = memo(function MessageInput({
           <CommandPopover
             isOpen={commandState.isActive}
             commands={filteredCommands}
-            selectedIndex={selectedIndex}
+            selectedIndex={effectiveSelectedIndex}
             onSelect={handleSelectCommand}
             onClose={closeCommand}
           />
@@ -443,70 +489,15 @@ export const MessageInput = memo(function MessageInput({
           <span className="sr-only">Send message</span>
         </Button>
       </div>
-      
+
       {/* Controls row: mode toggle, model selector, and hints */}
-      <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
-        <div className="flex items-center gap-2">
-          {/* Mode toggle button */}
-          {onToggleMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onToggleMode}
-              disabled={isBusy}
-              className={cn(
-                "gap-1.5 text-xs",
-                agentMode === "plan" ? "border-amber-500/50" : "border-blue-500/50"
-              )}
-              title={`Current mode: ${agentMode}. Press Tab to switch.`}
-            >
-              {agentMode === "plan" ? (
-                <>
-                  <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
-                  <span>Plan</span>
-                </>
-              ) : (
-                <>
-                  <Hammer className="h-3.5 w-3.5 text-blue-500" />
-                  <span>Build</span>
-                </>
-              )}
-            </Button>
-          )}
-          
-          {/* Model selector */}
-          {selectedModel && onModelChange && (
-            <ModelSelector
-              value={selectedModel}
-              onChange={onModelChange}
-              disabled={isBusy}
-              className="flex-1 sm:flex-none"
-            />
-          )}
-        </div>
-        
-        {/* Hints */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground sm:ml-auto">
-          <span>/ commands</span>
-          <span className="text-muted-foreground/50">·</span>
-          <span>@ files</span>
-          <span className="text-muted-foreground/50">·</span>
-          <span>Tab mode</span>
-          {isBusy && (
-            <>
-              <span className="text-muted-foreground/50">·</span>
-              <span>Esc cancel</span>
-              <span className="text-muted-foreground/50">·</span>
-              <span className="text-primary">queues</span>
-            </>
-          )}
-          <span className="text-muted-foreground/50">·</span>
-          <span className="flex items-center gap-1">
-            <ImageIcon className="h-3 w-3" />
-            paste
-          </span>
-        </div>
-      </div>
+      <InputControlsRow
+        agentMode={agentMode}
+        isBusy={isBusy ?? false}
+        selectedModel={selectedModel}
+        onToggleMode={onToggleMode}
+        onModelChange={onModelChange}
+      />
     </div>
   );
 });

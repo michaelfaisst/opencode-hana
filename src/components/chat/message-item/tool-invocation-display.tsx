@@ -1,0 +1,479 @@
+import { useState } from "react";
+import {
+  Terminal,
+  ChevronDown,
+  ChevronRight,
+  Check,
+  X,
+  Loader2,
+  Pencil,
+  ListTodo,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DiffViewer } from "../diff-viewer";
+import { InlineTodoList } from "../todo-list";
+import type { ToolPart, EditInput, TodoInput, ReadInput, WriteInput, BashInput } from "./types";
+
+interface ToolInvocationDisplayProps {
+  part: ToolPart;
+}
+
+export function ToolInvocationDisplay({ part }: ToolInvocationDisplayProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { tool, state } = part;
+
+  // Check if this is an edit tool with valid diff data
+  const isEditTool = tool === "edit";
+  const editInput = state.input as EditInput | undefined;
+  const hasValidDiff =
+    isEditTool && editInput?.oldString && editInput?.newString;
+
+  // Check if this is a todowrite tool
+  const isTodoWriteTool = tool === "todowrite";
+  const todoInput = state.input as TodoInput | undefined;
+  const hasTodos =
+    isTodoWriteTool && todoInput?.todos && todoInput.todos.length > 0;
+
+  // Check if this is a read tool
+  const isReadTool = tool === "read";
+  const readInput = state.input as ReadInput | undefined;
+
+  // Check if this is a write tool
+  const isWriteTool = tool === "write";
+  const writeInput = state.input as WriteInput | undefined;
+
+  // Check if this is a bash tool
+  const isBashTool = tool === "bash";
+  const bashInput = state.input as BashInput | undefined;
+
+  const statusIcon = {
+    pending: (
+      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+    ),
+    running: <Loader2 className="h-3 w-3 animate-spin text-primary" />,
+    completed: <Check className="h-3 w-3 text-green-500" />,
+    error: <X className="h-3 w-3 text-destructive" />,
+  }[state.status] || null;
+
+  // Render todowrite tool with inline todo list
+  if (hasTodos) {
+    return (
+      <TodoToolDisplay
+        todoInput={todoInput!}
+        statusIcon={statusIcon}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+    );
+  }
+
+  // Render edit tool with diff viewer
+  if (hasValidDiff) {
+    return (
+      <EditToolDisplay
+        editInput={editInput!}
+        state={state}
+        statusIcon={statusIcon}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+    );
+  }
+
+  // Render read tool with file path
+  if (isReadTool && readInput?.filePath) {
+    return (
+      <FileToolDisplay
+        type="read"
+        filePath={readInput.filePath}
+        state={state}
+        statusIcon={statusIcon}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+    );
+  }
+
+  // Render write tool with file path
+  if (isWriteTool && writeInput?.filePath) {
+    return (
+      <FileToolDisplay
+        type="write"
+        filePath={writeInput.filePath}
+        state={state}
+        statusIcon={statusIcon}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+    );
+  }
+
+  // Render bash tool with command
+  if (isBashTool && bashInput?.command) {
+    return (
+      <BashToolDisplay
+        bashInput={bashInput}
+        state={state}
+        statusIcon={statusIcon}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+    );
+  }
+
+  // Default tool display
+  return (
+    <DefaultToolDisplay
+      tool={tool}
+      state={state}
+      statusIcon={statusIcon}
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+    />
+  );
+}
+
+interface TodoToolDisplayProps {
+  todoInput: TodoInput;
+  statusIcon: React.ReactNode;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+function TodoToolDisplay({
+  todoInput,
+  statusIcon,
+  isOpen,
+  setIsOpen,
+}: TodoToolDisplayProps) {
+  const completedCount =
+    todoInput.todos?.filter((t) => t.status === "completed").length ?? 0;
+
+  return (
+    <details
+      className="rounded border border-border bg-muted/50"
+      open={isOpen}
+      onToggle={(e) => setIsOpen(e.currentTarget.open)}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+        {isOpen ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+        <ListTodo className="h-3 w-3" />
+        <span className="font-mono">
+          Tasks ({completedCount}/{todoInput.todos?.length ?? 0})
+        </span>
+        <span className="ml-auto">{statusIcon}</span>
+      </summary>
+      <div className="border-t border-border p-2">
+        <InlineTodoList todos={todoInput.todos!} />
+      </div>
+    </details>
+  );
+}
+
+interface EditToolDisplayProps {
+  editInput: EditInput;
+  state: ToolPart["state"];
+  statusIcon: React.ReactNode;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+function EditToolDisplay({
+  editInput,
+  state,
+  statusIcon,
+  isOpen,
+  setIsOpen,
+}: EditToolDisplayProps) {
+  return (
+    <details
+      className="rounded border border-border bg-muted/50"
+      open={isOpen}
+      onToggle={(e) => setIsOpen(e.currentTarget.open)}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+        {isOpen ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+        <Pencil className="h-3 w-3" />
+        <span className="font-mono">edit</span>
+        <span className="font-mono text-foreground/70 truncate flex-1">
+          {editInput.filePath}
+        </span>
+        <span className="ml-auto">{statusIcon}</span>
+      </summary>
+      <div className="border-t border-border">
+        <DiffViewer
+          oldString={editInput.oldString!}
+          newString={editInput.newString!}
+          filePath={editInput.filePath}
+        />
+        {/* Error output */}
+        {state.status === "error" && state.error && (
+          <div className="mt-2 px-3 py-2 bg-destructive/10 rounded">
+            <div className="text-xs font-medium text-destructive mb-1">
+              Error
+            </div>
+            <pre className="text-xs font-mono text-destructive whitespace-pre-wrap">
+              {state.error}
+            </pre>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
+interface FileToolDisplayProps {
+  type: "read" | "write";
+  filePath: string;
+  state: ToolPart["state"];
+  statusIcon: React.ReactNode;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+function FileToolDisplay({
+  type,
+  filePath,
+  state,
+  statusIcon,
+  isOpen,
+  setIsOpen,
+}: FileToolDisplayProps) {
+  // Format output for display
+  const formatOutput = (output: unknown): string => {
+    if (output === null || output === undefined) return "";
+    if (typeof output === "string") return output;
+    return JSON.stringify(output, null, 2);
+  };
+
+  const outputContent =
+    state.status === "completed" && state.output
+      ? formatOutput(state.output)
+      : state.status === "error" && state.error
+        ? state.error
+        : null;
+
+  const Icon = type === "read" ? ArrowLeft : ArrowRight;
+  const label = type === "read" ? "read" : "write";
+
+  return (
+    <details
+      className="rounded border border-border bg-muted/50"
+      open={isOpen}
+      onToggle={(e) => setIsOpen(e.currentTarget.open)}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+        {isOpen ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+        <Icon className="h-3 w-3" />
+        <span className="font-mono">{label}</span>
+        <span className="font-mono text-foreground/70 truncate flex-1">
+          {filePath}
+        </span>
+        <span className="ml-auto">{statusIcon}</span>
+      </summary>
+      <div className="border-t border-border">
+        {/* Output */}
+        {outputContent && (
+          <div className="px-3 py-2">
+            <div className="text-xs font-medium text-muted-foreground mb-1">
+              {state.status === "error" ? "Error" : "Output"}
+            </div>
+            <pre
+              className={cn(
+                "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
+                state.status === "error"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-background"
+              )}
+            >
+              {outputContent}
+            </pre>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
+interface BashToolDisplayProps {
+  bashInput: BashInput;
+  state: ToolPart["state"];
+  statusIcon: React.ReactNode;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+function BashToolDisplay({
+  bashInput,
+  state,
+  statusIcon,
+  isOpen,
+  setIsOpen,
+}: BashToolDisplayProps) {
+  // Format output for display
+  const formatOutput = (output: unknown): string => {
+    if (output === null || output === undefined) return "";
+    if (typeof output === "string") return output;
+    return JSON.stringify(output, null, 2);
+  };
+
+  const outputContent =
+    state.status === "completed" && state.output
+      ? formatOutput(state.output)
+      : state.status === "error" && state.error
+        ? state.error
+        : null;
+
+  // Truncate command for display in summary
+  const displayCommand = bashInput.command && bashInput.command.length > 60
+    ? bashInput.command.slice(0, 60) + "…"
+    : bashInput.command;
+
+  return (
+    <details
+      className="rounded border border-border bg-muted/50"
+      open={isOpen}
+      onToggle={(e) => setIsOpen(e.currentTarget.open)}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+        {isOpen ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+        <Terminal className="h-3 w-3" />
+        <span className="font-mono text-foreground/70 truncate flex-1">
+          {displayCommand}
+        </span>
+        <span className="ml-auto">{statusIcon}</span>
+      </summary>
+      <div className="border-t border-border">
+        {/* Full command if truncated */}
+        {bashInput.command && bashInput.command.length > 60 && (
+          <div className="px-3 py-2 border-b border-border">
+            <div className="text-xs font-medium text-muted-foreground mb-1">
+              Command
+            </div>
+            <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded whitespace-pre-wrap">
+              {bashInput.command}
+            </pre>
+          </div>
+        )}
+
+        {/* Output */}
+        {outputContent && (
+          <div className="px-3 py-2">
+            <div className="text-xs font-medium text-muted-foreground mb-1">
+              {state.status === "error" ? "Error" : "Output"}
+            </div>
+            <pre
+              className={cn(
+                "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
+                state.status === "error"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-background"
+              )}
+            >
+              {outputContent}
+            </pre>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
+interface DefaultToolDisplayProps {
+  tool: string;
+  state: ToolPart["state"];
+  statusIcon: React.ReactNode;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+function DefaultToolDisplay({
+  tool,
+  state,
+  statusIcon,
+  isOpen,
+  setIsOpen,
+}: DefaultToolDisplayProps) {
+  // Format output for display
+  const formatOutput = (output: unknown): string => {
+    if (output === null || output === undefined) return "";
+    if (typeof output === "string") return output;
+    return JSON.stringify(output, null, 2);
+  };
+
+  const outputContent =
+    state.status === "completed" && state.output
+      ? formatOutput(state.output)
+      : state.status === "error" && state.error
+        ? state.error
+        : null;
+
+  return (
+    <details
+      className="rounded border border-border bg-muted/50"
+      open={isOpen}
+      onToggle={(e) => setIsOpen(e.currentTarget.open)}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+        {isOpen ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+        <Terminal className="h-3 w-3" />
+        <span className="font-mono">{tool}</span>
+        <span className="ml-auto">{statusIcon}</span>
+      </summary>
+      <div className="border-t border-border">
+        {/* Input */}
+        {state.input && Object.keys(state.input).length > 0 && (
+          <div className="px-3 py-2 border-b border-border">
+            <div className="text-xs font-medium text-muted-foreground mb-1">
+              Input
+            </div>
+            <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded">
+              {JSON.stringify(state.input, null, 2)}
+            </pre>
+          </div>
+        )}
+
+        {/* Output */}
+        {outputContent && (
+          <div className="px-3 py-2">
+            <div className="text-xs font-medium text-muted-foreground mb-1">
+              {state.status === "error" ? "Error" : "Output"}
+            </div>
+            <pre
+              className={cn(
+                "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
+                state.status === "error"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-background"
+              )}
+            >
+              {outputContent}
+            </pre>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}

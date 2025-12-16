@@ -70,7 +70,6 @@ export function useEvents() {
   const messageThrottleRef = useRef(createTrailingThrottle(200));
 
   const handleEvent = useCallback((event: Event) => {
-    console.log("[Events] Received:", event.type, event.properties);
     const qc = queryClientRef.current;
     const throttle = messageThrottleRef.current;
     
@@ -175,12 +174,10 @@ export function useEvents() {
 
       // Server connection event
       case "server.connected":
-        console.log("[Events] Server connected successfully");
         break;
 
       default:
-        // Log unhandled events for debugging
-        console.debug("[Events] Unhandled event:", event.type);
+        // Unhandled events are silently ignored
     }
   }, []);
 
@@ -197,12 +194,12 @@ export function useEvents() {
       eventSourceRef.current = null;
     }
 
-    console.log("[Events] Connecting to SSE via EventSource...");
+    console.log("[Events] Connecting to SSE...");
     const eventSource = new EventSource("/event");
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
-      console.log("[Events] EventSource connected");
+      console.log("[Events] Connected");
       // Clear all session statuses on reconnect - assume idle until we hear otherwise
       // This prevents stale "busy" states from persisting after reconnection
       setState({ isConnected: true, sessionStatuses: new Map() });
@@ -218,7 +215,7 @@ export function useEvents() {
     };
 
     eventSource.onerror = (error) => {
-      console.error("[Events] EventSource error:", error);
+      console.error("[Events] Connection error:", error);
       setState((prev) => ({ ...prev, isConnected: false }));
       
       // Close the connection
@@ -226,7 +223,6 @@ export function useEvents() {
       eventSourceRef.current = null;
       
       // Auto-reconnect after 3 seconds
-      console.log("[Events] Scheduling reconnect in 3 seconds...");
       reconnectTimeoutRef.current = setTimeout(() => {
         connect();
       }, 3000);
