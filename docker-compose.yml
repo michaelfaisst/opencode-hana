@@ -1,5 +1,5 @@
 services:
-  opencode-web:
+  opencode-hana:
     build: .
     ports:
       - "3000:80"

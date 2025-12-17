@@ -1,6 +1,6 @@
-# OpenCode Web
+# OpenCode Hana
 
-A mobile-friendly web UI to interact with OpenCode server.
+A mobile-friendly web UI to interact with the OpenCode server.
 
 ## Features
 

@@ -319,12 +319,12 @@ export function HomePage() {
     }
   }, [activeSessionId, renameSession]);
 
-  const title = session?.title || (activeSessionId ? `Session ${activeSessionId.slice(0, 8)}` : "OpenCode");
+  const sessionTitle = session?.title || (activeSessionId ? `Session ${activeSessionId.slice(0, 8)}` : undefined);
   const hasNoSessions = !isLoadingSessions && sortedSessions.length === 0;
 
   return (
     <div className="flex h-screen flex-col">
-      <Header title={title} />
+      <Header sessionTitle={sessionTitle} />
       <div className="flex-1 flex overflow-hidden">
         {/* Sessions sidebar - hidden on mobile */}
         <div className="hidden lg:block">

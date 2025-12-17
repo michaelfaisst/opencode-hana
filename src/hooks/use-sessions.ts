@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useOpencodeClient } from "@/providers";
 import { QUERY_KEYS } from "@/lib/constants";
 
-const WEB_SESSIONS_KEY = "opencode-web-sessions-v2";
+const WEB_SESSIONS_KEY = "opencode-hana-sessions-v2";
 
 interface WebSessionInfo {
   id: string;

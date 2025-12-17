@@ -297,12 +297,12 @@ export function SettingsPage() {
           <CardHeader>
             <CardTitle className="text-base">About</CardTitle>
             <CardDescription>
-              OpenCode Web Dashboard
+              OpenCode Hana
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground space-y-1">
-              <p>A mobile-friendly web interface for OpenCode.</p>
+              <p>A mobile-friendly web interface for the OpenCode server.</p>
               <p>
                 Built with React, Vite, shadcn/ui, and the OpenCode SDK.
               </p>
