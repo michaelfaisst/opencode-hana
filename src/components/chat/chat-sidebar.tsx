@@ -10,12 +10,13 @@ import {
   SidebarChangedFiles,
   SidebarTasks,
   SidebarMcpServers,
+  SidebarSettingsDialog,
   type TodoItem,
   type ChangedFile,
   type SessionStats,
   type ContextUsageData,
 } from "./sidebar";
-import { useMcpServers } from "@/hooks";
+import { useMcpServers, useSidebarSettings, type SidebarSectionId } from "@/hooks";
 
 interface TokenInfo {
   input: number;
@@ -64,6 +65,7 @@ export function ChatSidebar({
 }: ChatSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: mcpServers = [], isLoading: isMcpLoading } = useMcpServers();
+  const { settings } = useSidebarSettings();
 
   // Extract the latest todos from todowrite tool calls
   const todos = useMemo(() => {
@@ -240,6 +242,45 @@ export function ChatSidebar({
     return false;
   };
 
+  // Render a sidebar section by its ID
+  const renderSection = (sectionId: SidebarSectionId) => {
+    switch (sectionId) {
+      case "actions":
+        return onCommand ? (
+          <SidebarActions
+            key="actions"
+            commands={toolbarCommands}
+            onCommand={onCommand}
+            isCommandDisabled={isCommandDisabled}
+          />
+        ) : null;
+      case "session-info":
+        return <SidebarSessionInfo key="session-info" stats={stats} />;
+      case "context-usage":
+        return (
+          <SidebarContextUsage
+            key="context-usage"
+            contextUsage={contextUsage}
+            contextLimit={contextLimit}
+          />
+        );
+      case "changed-files":
+        return <SidebarChangedFiles key="changed-files" files={changedFiles} />;
+      case "mcp-servers":
+        return (
+          <SidebarMcpServers
+            key="mcp-servers"
+            servers={mcpServers}
+            isLoading={isMcpLoading}
+          />
+        );
+      case "tasks":
+        return <SidebarTasks key="tasks" todos={todos} />;
+      default:
+        return null;
+    }
+  };
+
   // Collapsed state - just show toggle button
   if (isCollapsed) {
     return (
@@ -271,48 +312,29 @@ export function ChatSidebar({
         className
       )}
     >
-      {/* Header with collapse button */}
+      {/* Header with collapse and settings buttons */}
       <div className="flex items-center justify-between p-2 border-b border-border">
         <span className="text-xs font-medium text-muted-foreground px-2">
           Sidebar
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsCollapsed(true)}
-          className="h-6 w-6"
-          title="Collapse sidebar"
-        >
-          <PanelRightOpen className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <SidebarSettingsDialog />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(true)}
+            className="h-6 w-6"
+            title="Collapse sidebar"
+          >
+            <PanelRightOpen className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Actions Section */}
-      {onCommand && (
-        <SidebarActions
-          commands={toolbarCommands}
-          onCommand={onCommand}
-          isCommandDisabled={isCommandDisabled}
-        />
-      )}
-
-      {/* Session Info */}
-      <SidebarSessionInfo stats={stats} />
-
-      {/* Context Usage */}
-      <SidebarContextUsage
-        contextUsage={contextUsage}
-        contextLimit={contextLimit}
-      />
-
-      {/* Changed Files */}
-      <SidebarChangedFiles files={changedFiles} />
-
-      {/* MCP Servers */}
-      <SidebarMcpServers servers={mcpServers} isLoading={isMcpLoading} />
-
-      {/* Tasks */}
-      <SidebarTasks todos={todos} />
+      {/* Render sections based on settings */}
+      {settings.sections
+        .filter((section) => section.enabled)
+        .map((section) => renderSection(section.id))}
     </div>
   );
 }

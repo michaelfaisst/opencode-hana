@@ -19,3 +19,10 @@ export {
   useExportSession,
   type Command,
 } from "./use-commands";
+export {
+  useSidebarSettings,
+  DEFAULT_SECTIONS,
+  type SidebarSection,
+  type SidebarSectionId,
+  type SidebarSettings,
+} from "./use-sidebar-settings";

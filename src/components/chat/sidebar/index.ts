@@ -5,4 +5,5 @@ export { SidebarContextUsage } from "./sidebar-context-usage";
 export { SidebarChangedFiles } from "./sidebar-changed-files";
 export { SidebarTasks } from "./sidebar-tasks";
 export { SidebarMcpServers } from "./sidebar-mcp-servers";
+export { SidebarSettingsDialog } from "./sidebar-settings-dialog";
 export * from "./types";
