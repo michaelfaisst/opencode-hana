@@ -26,7 +26,7 @@ import {
 import { useSettings, useProviders } from "@/hooks";
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, ArrowLeft } from "lucide-react";
+import { X, ArrowLeft, GithubIcon } from "lucide-react";
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -301,11 +301,20 @@ export function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-muted-foreground space-y-1">
+            <div className="text-sm text-muted-foreground space-y-2">
               <p>A mobile-friendly web interface for the OpenCode server.</p>
               <p>
                 Built with React, Vite, shadcn/ui, and the OpenCode SDK.
               </p>
+              <a
+                href="https://github.com/michaelfaisst/opencode-hana"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-foreground hover:underline"
+              >
+                <GithubIcon className="h-4 w-4" />
+                View on GitHub
+              </a>
             </div>
           </CardContent>
         </Card>

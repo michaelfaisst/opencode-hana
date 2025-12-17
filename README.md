@@ -4,11 +4,16 @@ A mobile-friendly web UI to interact with the OpenCode server.
 
 ## Features
 
-- **Session Management**: View, create, and delete chat sessions
-- **Chat Interface**: Send messages and receive AI responses
-- **Mobile-First Design**: Responsive layout with bottom navigation
-- **Dark/Light Theme**: Toggle between themes
-- **Real-time Updates**: Live streaming of AI responses (coming soon)
+- **Session Management**: Create, rename, and delete chat sessions
+- **Real-time Streaming**: Live streaming of AI responses with typing indicators
+- **Diff Viewer**: View file changes with syntax-highlighted diffs
+- **File Mentions**: Reference files directly in your messages
+- **Image Support**: Attach and preview images in conversations
+- **MCP Servers**: View and manage Model Context Protocol servers
+- **Task Tracking**: Monitor AI task progress with todo lists
+- **Context Usage**: Track token usage and context window consumption
+- **Mobile-First Design**: Responsive layout optimized for mobile devices
+- **Dark/Light Theme**: Toggle between themes or follow system preference
 
 ## Prerequisites
 
@@ -53,11 +58,11 @@ docker-compose up --build
 - **Vite** - Build tool
 - **React 19** - UI framework
 - **TypeScript** - Type safety
-- **shadcn/ui** - UI components (lyra style, indigo theme)
+- **shadcn/ui** - UI components
 - **Tailwind CSS v4** - Styling
 - **TanStack Query** - Server state management
-- **react-router-dom** - Routing
-- **@opencode-ai/sdk** - OpenCode API client
+- **React Router** - Routing
+- **OpenCode SDK** - OpenCode API client
 
 ## Project Structure
 
