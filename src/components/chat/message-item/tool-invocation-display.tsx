@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { DiffViewer } from "../diff-viewer";
 import { InlineTodoList } from "../todo-list";
+import { FileContentViewer } from "./file-content-viewer";
 import type { ToolPart, EditInput, TodoInput, ReadInput, WriteInput, BashInput } from "./types";
 
 interface ToolInvocationDisplayProps {
@@ -88,6 +89,7 @@ export function ToolInvocationDisplay({ part }: ToolInvocationDisplayProps) {
       <FileToolDisplay
         type="read"
         filePath={readInput.filePath}
+        content={state.output as string | undefined}
         state={state}
         statusIcon={statusIcon}
         isOpen={isOpen}
@@ -102,6 +104,7 @@ export function ToolInvocationDisplay({ part }: ToolInvocationDisplayProps) {
       <FileToolDisplay
         type="write"
         filePath={writeInput.filePath}
+        content={writeInput.content}
         state={state}
         statusIcon={statusIcon}
         isOpen={isOpen}
@@ -235,6 +238,7 @@ function EditToolDisplay({
 interface FileToolDisplayProps {
   type: "read" | "write";
   filePath: string;
+  content?: string;
   state: ToolPart["state"];
   statusIcon: React.ReactNode;
   isOpen: boolean;
@@ -244,27 +248,19 @@ interface FileToolDisplayProps {
 function FileToolDisplay({
   type,
   filePath,
+  content,
   state,
   statusIcon,
   isOpen,
   setIsOpen,
 }: FileToolDisplayProps) {
-  // Format output for display
-  const formatOutput = (output: unknown): string => {
-    if (output === null || output === undefined) return "";
-    if (typeof output === "string") return output;
-    return JSON.stringify(output, null, 2);
-  };
-
-  const outputContent =
-    state.status === "completed" && state.output
-      ? formatOutput(state.output)
-      : state.status === "error" && state.error
-        ? state.error
-        : null;
-
   const Icon = type === "read" ? ArrowLeft : ArrowRight;
   const label = type === "read" ? "read" : "write";
+
+  // For read tool, content comes from output; for write tool, it comes from input
+  const displayContent = content || "";
+  const hasContent = displayContent.length > 0;
+  const hasError = state.status === "error" && state.error;
 
   return (
     <details
@@ -286,21 +282,29 @@ function FileToolDisplay({
         <span className="ml-auto">{statusIcon}</span>
       </summary>
       <div className="border-t border-border">
-        {/* Output */}
-        {outputContent && (
+        {/* File content with syntax highlighting */}
+        {hasContent && (
+          <FileContentViewer
+            content={displayContent}
+            filePath={filePath}
+            maxHeight="400px"
+            forceHighlight={type === "write"}
+          />
+        )}
+
+        {/* Error output */}
+        {hasError && (
           <div className="px-3 py-2">
-            <div className="text-xs font-medium text-muted-foreground mb-1">
-              {state.status === "error" ? "Error" : "Output"}
+            <div className="text-xs font-medium text-destructive mb-1">
+              Error
             </div>
             <pre
               className={cn(
                 "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
-                state.status === "error"
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-background"
+                "bg-destructive/10 text-destructive"
               )}
             >
-              {outputContent}
+              {state.error}
             </pre>
           </div>
         )}
