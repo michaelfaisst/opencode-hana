@@ -126,46 +126,9 @@ export function HomePage() {
     activeSessionId || ""
   );
 
-  // Detect if the session is actually busy based on message content
-  // This serves as a fallback/verification when SSE events might be stale
-  const hasActiveToolParts = useMemo(() => {
-    if (messages.length === 0) return false;
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.info.role !== "assistant") return false;
-    
-    // Check if any tool parts are pending or running
-    return lastMessage.parts.some(
-      (part: { type: string; state?: { status?: string } }) => 
-        part.type === "tool" && 
-        (part.state?.status === "pending" || part.state?.status === "running")
-    );
-  }, [messages]);
-
-  // Check if we're waiting for an assistant response (last message is from user)
-  const isWaitingForResponse = useMemo(() => {
-    if (messages.length === 0) return false;
-    const lastMessage = messages[messages.length - 1];
-    return lastMessage.info.role === "user";
-  }, [messages]);
-
   // Determine busy state:
-  // - If there are active tool parts (pending/running) -> definitely busy
-  // - If last message is from user -> busy (waiting for assistant response)
-  // - If SSE says busy AND we have no messages yet -> busy (initial state)
-  // - If SSE says busy but last message is complete assistant message -> SSE is stale, not busy
-  const isBusy = hasActiveToolParts || isWaitingForResponse || (isBusyFromSSE && messages.length === 0);
-
-  // Debug logging for busy state
-  useEffect(() => {
-    console.log('[BusyState]', {
-      isBusy,
-      hasActiveToolParts,
-      isWaitingForResponse,
-      isBusyFromSSE,
-      messagesLength: messages.length,
-      lastMessageRole: messages.length > 0 ? messages[messages.length - 1].info.role : 'none',
-    });
-  }, [isBusy, hasActiveToolParts, isWaitingForResponse, isBusyFromSSE, messages]);
+  // Trust the SSE status - show indicator from session start until session.idle event
+  const isBusy = isBusyFromSSE;
 
   // Command hooks
   const revertSession = useRevertSession();
@@ -379,6 +342,7 @@ export function HomePage() {
               onCommand={handleCommand}
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
+              autoFocusInput={messages.length === 0}
             />
           )}
         </div>

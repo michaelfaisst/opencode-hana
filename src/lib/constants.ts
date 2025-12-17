@@ -5,4 +5,5 @@ export const QUERY_KEYS = {
   providers: ["providers"] as const,
   projects: ["projects"] as const,
   config: ["config"] as const,
+  mcpServers: ["mcpServers"] as const,
 } as const;

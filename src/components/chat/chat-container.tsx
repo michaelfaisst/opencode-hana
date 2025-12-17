@@ -74,6 +74,8 @@ interface ChatContainerProps {
   onCommand?: (command: Command) => void;
   selectedModel?: SelectedModel;
   onModelChange?: (model: SelectedModel) => void;
+  /** Auto-focus the input field */
+  autoFocusInput?: boolean;
 }
 
 export function ChatContainer({
@@ -88,6 +90,7 @@ export function ChatContainer({
   onCommand,
   selectedModel,
   onModelChange,
+  autoFocusInput,
 }: ChatContainerProps) {
   const { data: providersData } = useProviders();
   const { settings, setAgentMode } = useSettings();
@@ -223,6 +226,7 @@ export function ChatContainer({
             agentMode={settings.agentMode}
             selectedModel={selectedModel}
             onModelChange={onModelChange}
+            autoFocus={autoFocusInput}
           />
         </div>
       </div>

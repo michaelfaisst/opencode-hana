@@ -8,6 +8,14 @@ interface EventState {
   sessionStatuses: Map<string, SessionStatus>;
 }
 
+export interface EventsHookResult {
+  isConnected: boolean;
+  sessionStatuses: Map<string, SessionStatus>;
+  reconnect: () => void;
+  disconnect: () => void;
+  setSessionBusy: (sessionId: string) => void;
+}
+
 // Trailing throttle - ensures a final call after the delay
 // This is important for streaming: we want updates during streaming AND a final update
 function createTrailingThrottle(delay: number) {
@@ -50,7 +58,7 @@ function createTrailingThrottle(delay: number) {
  * Uses native EventSource for reliable browser SSE handling
  * Automatically invalidates queries when relevant events are received
  */
-export function useEvents() {
+export function useEvents(): EventsHookResult {
   const queryClient = useQueryClient();
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -242,6 +250,15 @@ export function useEvents() {
     setState((prev) => ({ ...prev, isConnected: false }));
   }, []);
 
+  // Function to manually set a session as busy (called when sending a message)
+  const setSessionBusy = useCallback((sessionId: string) => {
+    setState((prev) => {
+      const newStatuses = new Map(prev.sessionStatuses);
+      newStatuses.set(sessionId, { type: "busy" });
+      return { ...prev, sessionStatuses: newStatuses };
+    });
+  }, []);
+
   // Connect once on mount, cleanup on unmount
   useEffect(() => {
     connect();
@@ -256,6 +273,7 @@ export function useEvents() {
     sessionStatuses: state.sessionStatuses,
     reconnect: connect,
     disconnect,
+    setSessionBusy,
   };
 }
 

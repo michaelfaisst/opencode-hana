@@ -25,6 +25,8 @@ interface MessageInputProps {
   agentMode?: AgentMode;
   selectedModel?: SelectedModel;
   onModelChange?: (model: SelectedModel) => void;
+  /** Auto-focus the input field on mount */
+  autoFocus?: boolean;
 }
 
 interface MentionState {
@@ -49,6 +51,7 @@ export const MessageInput = memo(function MessageInput({
   agentMode = "build",
   selectedModel,
   onModelChange,
+  autoFocus = false,
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
   const [images, setImages] = useState<ImageAttachment[]>([]);
@@ -101,6 +104,17 @@ export const MessageInput = memo(function MessageInput({
     }
     return 0;
   }, [selectedIndex, commandState.isActive, mentionState.isActive, filteredCommands.length, files.length]);
+
+  // Auto-focus textarea on mount if autoFocus is true
+  useEffect(() => {
+    if (autoFocus) {
+      // Use a small delay to ensure the component is fully mounted
+      const timer = setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [autoFocus]);
 
   // Auto-resize textarea
   useEffect(() => {

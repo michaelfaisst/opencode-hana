@@ -9,11 +9,13 @@ import {
   SidebarContextUsage,
   SidebarChangedFiles,
   SidebarTasks,
+  SidebarMcpServers,
   type TodoItem,
   type ChangedFile,
   type SessionStats,
   type ContextUsageData,
 } from "./sidebar";
+import { useMcpServers } from "@/hooks";
 
 interface TokenInfo {
   input: number;
@@ -61,6 +63,7 @@ export function ChatSidebar({
   isBusy = false,
 }: ChatSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { data: mcpServers = [], isLoading: isMcpLoading } = useMcpServers();
 
   // Extract the latest todos from todowrite tool calls
   const todos = useMemo(() => {
@@ -304,6 +307,9 @@ export function ChatSidebar({
 
       {/* Changed Files */}
       <SidebarChangedFiles files={changedFiles} />
+
+      {/* MCP Servers */}
+      <SidebarMcpServers servers={mcpServers} isLoading={isMcpLoading} />
 
       {/* Tasks */}
       <SidebarTasks todos={todos} />

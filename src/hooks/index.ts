@@ -6,6 +6,7 @@ export { useEvents } from "./use-events";
 export { useSettings, type SelectedModel, type AgentMode, type AppSettings } from "./use-settings";
 export { useFileSearch } from "./use-file-search";
 export { useInputHistory } from "./use-input-history";
+export { useMcpServers, useConnectMcpServer, useDisconnectMcpServer, type McpServer, type McpStatus } from "./use-mcp-servers";
 export {
   COMMANDS,
   filterCommands,

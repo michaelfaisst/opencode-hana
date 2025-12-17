@@ -1,4 +1,5 @@
 import type { Command } from "@/hooks/use-commands";
+import type { McpServer } from "@/hooks/use-mcp-servers";
 
 export interface TodoItem {
   id: string;
@@ -79,6 +80,11 @@ export interface ChangedFilesProps {
 
 export interface TasksProps {
   todos: TodoItem[];
+}
+
+export interface McpServersProps {
+  servers: McpServer[];
+  isLoading?: boolean;
 }
 
 /**
