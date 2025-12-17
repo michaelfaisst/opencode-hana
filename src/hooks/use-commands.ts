@@ -11,6 +11,7 @@ import {
   Copy,
   Share2,
   Pencil,
+  Server,
   type LucideIcon,
 } from "lucide-react";
 
@@ -108,6 +109,15 @@ export const COMMANDS: Command[] = [
     icon: Pencil,
     requiresSession: true,
     showInToolbar: true,
+    opensDialog: true,
+  },
+  {
+    name: "mcp",
+    label: "MCP Servers",
+    description: "Manage MCP server connections",
+    icon: Server,
+    requiresSession: false,
+    showInToolbar: false,
     opensDialog: true,
   },
 ];

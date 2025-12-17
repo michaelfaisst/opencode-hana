@@ -11,4 +11,5 @@ export { FileMentionPopover } from "./file-mention-popover";
 export { CommandPopover } from "./command-popover";
 export { CommandToolbar } from "./command-toolbar";
 export { RenameSessionDialog } from "./rename-session-dialog";
+export { McpServersDialog } from "./mcp-servers-dialog";
 export { ImageLightbox } from "./image-lightbox";

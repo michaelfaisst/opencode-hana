@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MessageSquare, Plus } from "lucide-react";
 import { Header } from "@/components/layout/header";
-import { ChatContainer, SessionsSidebar, RenameSessionDialog } from "@/components/chat";
+import { ChatContainer, SessionsSidebar, RenameSessionDialog, McpServersDialog } from "@/components/chat";
 import { CreateSessionDialog } from "@/components/sessions";
 import { type SelectedModel } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,9 @@ export function HomePage() {
 
   // Rename dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  
+  // MCP servers dialog state
+  const [mcpDialogOpen, setMcpDialogOpen] = useState(false);
 
   // Sort sessions by updatedAt descending
   const sortedSessions = useMemo(() => {
@@ -276,6 +279,11 @@ export function HomePage() {
           break;
         }
 
+        case "mcp": {
+          setMcpDialogOpen(true);
+          break;
+        }
+
         default:
           console.warn(`Unknown command: ${command.name}`);
       }
@@ -355,6 +363,12 @@ export function HomePage() {
         currentTitle={session?.title}
         onRename={handleRenameSession}
         isLoading={renameSession.isPending}
+      />
+
+      {/* MCP servers dialog */}
+      <McpServersDialog
+        open={mcpDialogOpen}
+        onOpenChange={setMcpDialogOpen}
       />
     </div>
   );
