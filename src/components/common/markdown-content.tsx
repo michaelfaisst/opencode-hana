@@ -39,7 +39,7 @@ export const MarkdownContent = memo(function MarkdownContent({
               <ShikiCodeBlock
                 code={String(children).replace(/\n$/, "")}
                 language={match[1]}
-                className="my-2 rounded"
+                className="mb-6 rounded"
               />
             );
           },
@@ -47,13 +47,13 @@ export const MarkdownContent = memo(function MarkdownContent({
             return <div className="overflow-x-auto">{children}</div>;
           },
           p({ children }) {
-            return <p className="mb-2 last:mb-0">{children}</p>;
+            return <p className="mb-6 last:mb-0">{children}</p>;
           },
           ul({ children }) {
-            return <ul className="mb-2 list-disc pl-4">{children}</ul>;
+            return <ul className="mb-6 list-disc pl-4">{children}</ul>;
           },
           ol({ children }) {
-            return <ol className="mb-2 list-decimal pl-4">{children}</ol>;
+            return <ol className="mb-6 list-decimal pl-4">{children}</ol>;
           },
           li({ children }) {
             return <li className="mb-1">{children}</li>;

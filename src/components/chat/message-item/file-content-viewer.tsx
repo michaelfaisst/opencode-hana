@@ -121,7 +121,7 @@ export const FileContentViewer = memo(function FileContentViewer({
 
   return (
     <div
-      className={cn("overflow-auto bg-[#24292e] rounded-b", className)}
+      className={cn("overflow-auto rounded-b", className)}
       style={{ maxHeight }}
     >
       <ShikiCodeBlock
@@ -129,7 +129,7 @@ export const FileContentViewer = memo(function FileContentViewer({
         language={language}
         showLineNumbers
         startLine={effectiveStartLine}
-        className="p-3 text-xs"
+        className="text-xs"
       />
     </div>
   );

@@ -1,0 +1,10 @@
+/* Theme imports - base must come first, then custom themes override */
+@import "./base.css";
+@import "./catppuccin-latte.css";
+@import "./catppuccin-mocha.css";
+@import "./dracula.css";
+@import "./monokai.css";
+@import "./nord.css";
+@import "./one-dark.css";
+@import "./synthwave-84.css";
+@import "./tokyo-night.css";

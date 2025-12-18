@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/header";
-import { useTheme } from "@/providers";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -37,7 +36,6 @@ import {
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
   const {
     defaultModel,
     replaceSessionOnNew,
@@ -280,32 +278,6 @@ export function SettingsPage() {
                   ? "This model will be selected by default when starting new chats."
                   : "When not set, the first available model will be used."}
               </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Appearance</CardTitle>
-            <CardDescription>
-              Customize the look and feel of the app
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="theme">Theme</Label>
-              <Select value={theme} onValueChange={(value) => value && setTheme(value as "light" | "dark" | "system")}>
-                <SelectTrigger id="theme" className="max-w-sm">
-                  <SelectValue>
-                    {theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>

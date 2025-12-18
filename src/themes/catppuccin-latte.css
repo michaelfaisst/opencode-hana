@@ -1,0 +1,34 @@
+/* Catppuccin Latte (Light) */
+.catppuccin-latte {
+  --background: #eff1f5;
+  --foreground: #4c4f69;
+  --card: #e6e9ef;
+  --card-foreground: #4c4f69;
+  --popover: #e6e9ef;
+  --popover-foreground: #4c4f69;
+  --primary: #8839ef;
+  --primary-foreground: #eff1f5;
+  --secondary: #ccd0da;
+  --secondary-foreground: #4c4f69;
+  --muted: #e6e9ef;
+  --muted-foreground: #6c6f85;
+  --accent: #8839ef;
+  --accent-foreground: #eff1f5;
+  --destructive: #d20f39;
+  --border: #ccd0da;
+  --input: #ccd0da;
+  --ring: #8839ef;
+  --chart-1: #8839ef;
+  --chart-2: #1e66f5;
+  --chart-3: #179299;
+  --chart-4: #40a02b;
+  --chart-5: #df8e1d;
+  --sidebar: #e6e9ef;
+  --sidebar-foreground: #4c4f69;
+  --sidebar-primary: #8839ef;
+  --sidebar-primary-foreground: #eff1f5;
+  --sidebar-accent: #8839ef;
+  --sidebar-accent-foreground: #eff1f5;
+  --sidebar-border: #ccd0da;
+  --sidebar-ring: #8839ef;
+}

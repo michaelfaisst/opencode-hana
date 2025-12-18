@@ -2,9 +2,7 @@ import { memo } from "react";
 import ShikiHighlighter, { useShikiHighlighter } from "react-shiki";
 import type { BundledLanguage, BundledTheme } from "shiki";
 import { cn } from "@/lib/utils";
-
-// Use github-dark theme which is similar to oneDark used by Prism
-const DEFAULT_THEME: BundledTheme = "github-dark";
+import { useThemeStore, getShikiTheme } from "@/stores";
 
 interface ShikiCodeBlockProps {
   code: string;
@@ -29,6 +27,10 @@ export const ShikiCodeBlock = memo(function ShikiCodeBlock({
   startLine = 1,
   delay = 0,
 }: ShikiCodeBlockProps) {
+  // Get current theme and map to Shiki theme
+  const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
+  const shikiTheme = getShikiTheme(resolvedTheme);
+  
   // Normalize language name for Shiki
   const normalizedLang = normalizeLanguage(language);
 
@@ -45,7 +47,7 @@ export const ShikiCodeBlock = memo(function ShikiCodeBlock({
     >
       <ShikiHighlighter
         language={normalizedLang as BundledLanguage}
-        theme={DEFAULT_THEME}
+        theme={shikiTheme}
         delay={delay}
         showLineNumbers={showLineNumbers}
         startingLineNumber={startLine}
@@ -71,13 +73,17 @@ export const ShikiInlineCode = memo(function ShikiInlineCode({
   language,
   className,
 }: ShikiInlineCodeProps) {
+  // Get current theme and map to Shiki theme
+  const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
+  const shikiTheme = getShikiTheme(resolvedTheme);
+  
   const normalizedLang = normalizeLanguage(language);
 
   // Use the hook for more control over inline rendering
   const highlighted = useShikiHighlighter(
     code || " ",
     normalizedLang as BundledLanguage,
-    DEFAULT_THEME
+    shikiTheme
   );
 
   return (

@@ -5,7 +5,7 @@ export {
   type SelectedModel,
 } from "./app-settings-store";
 export { useUILayoutStore } from "./ui-layout-store";
-export { useThemeStore, type Theme } from "./theme-store";
+export { useThemeStore, THEMES, getShikiTheme, type Theme, type ResolvedTheme } from "./theme-store";
 export {
   useSidebarSettingsStore,
   DEFAULT_SECTIONS,

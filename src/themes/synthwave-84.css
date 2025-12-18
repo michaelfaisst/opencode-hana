@@ -1,0 +1,47 @@
+/* Synthwave '84 */
+.synthwave-84 {
+  --background: #262335;
+  --foreground: #ffffff;
+  --card: #34294f;
+  --card-foreground: #ffffff;
+  --popover: #34294f;
+  --popover-foreground: #ffffff;
+  --primary: #ff7edb;
+  --primary-foreground: #262335;
+  --secondary: #614d85;
+  --secondary-foreground: #ffffff;
+  --muted: #34294f;
+  --muted-foreground: #848bbd;
+  --accent: #36f9f6;
+  --accent-foreground: #262335;
+  --destructive: #fe4450;
+  --border: #495495;
+  --input: #495495;
+  --ring: #ff7edb;
+  --chart-1: #ff7edb;
+  --chart-2: #36f9f6;
+  --chart-3: #fede5d;
+  --chart-4: #ff8b39;
+  --chart-5: #72f1b8;
+  --sidebar: #1a1a2e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ff7edb;
+  --sidebar-primary-foreground: #262335;
+  --sidebar-accent: #36f9f6;
+  --sidebar-accent-foreground: #262335;
+  --sidebar-border: #495495;
+  --sidebar-ring: #ff7edb;
+}
+
+/* Synthwave '84 Code Glow Effects */
+.synthwave-84 code {
+  text-shadow: 0 0 8px #ff7edb, 0 0 16px rgba(255, 126, 219, 0.5);
+}
+
+.synthwave-84 pre {
+  box-shadow: 0 0 12px rgba(255, 126, 219, 0.3), 0 0 24px rgba(54, 249, 246, 0.15);
+}
+
+.synthwave-84 .shiki span {
+  text-shadow: 0 0 8px currentColor;
+}
