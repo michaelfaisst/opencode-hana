@@ -2,6 +2,7 @@ import { Moon, Sun, Monitor, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/providers";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,39 +44,53 @@ export function Header({ title, sessionTitle, children, leftContent }: HeaderPro
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {leftContent}
-          <Logo className="h-6 w-6" />
-          <h1 className="text-lg font-semibold">{title || "OpenCode Hana"}</h1>
+          <Logo className="h-6 w-6 shrink-0" />
+          <h1 className="text-lg font-semibold shrink-0">{title || "OpenCode Hana"}</h1>
           {sessionTitle && (
             <>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-sm text-muted-foreground truncate max-w-48">{sessionTitle}</span>
+              <span className="text-muted-foreground shrink-0">/</span>
+              <span className="text-sm text-muted-foreground truncate">{sessionTitle}</span>
             </>
           )}
         </div>
         <div className="flex items-center gap-2">
           {children}
-          <Link
-            to="/settings"
-            className="hidden md:inline-flex items-center justify-center h-9 w-9 rounded-none hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Settings className="h-4 w-4" />
-            <span className="sr-only">Settings</span>
-          </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger
+          <Tooltip>
+            <TooltipTrigger
               render={
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  {resolvedTheme === "dark" ? (
-                    <Moon className="h-4 w-4" />
-                  ) : (
-                    <Sun className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">Toggle theme</span>
-                </Button>
+                <Link
+                  to="/settings"
+                  className="hidden md:inline-flex items-center justify-center h-9 w-9 rounded-none hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="sr-only">Settings</span>
+                </Link>
               }
             />
+            <TooltipContent>Settings</TooltipContent>
+          </Tooltip>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <DropdownMenuTrigger
+                    render={
+                      <Button variant="ghost" size="icon" className="h-9 w-9">
+                        {resolvedTheme === "dark" ? (
+                          <Moon className="h-4 w-4" />
+                        ) : (
+                          <Sun className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">Toggle theme</span>
+                      </Button>
+                    }
+                  />
+                }
+              />
+              <TooltipContent>Toggle theme</TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setTheme("light")}>
                 <Sun className="mr-2 h-4 w-4" />

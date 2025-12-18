@@ -3,6 +3,7 @@ import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { COMMANDS, type Command } from "@/hooks/use-commands";
 import {
   SidebarActions,
@@ -293,15 +294,21 @@ export function ChatSidebar({
         )}
       >
         <div className="p-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleChatSidebar}
-            className="h-6 w-6"
-            title="Expand sidebar"
-          >
-            <PanelRightClose className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleChatSidebar}
+                  className="h-6 w-6"
+                >
+                  <PanelRightClose className="h-4 w-4" />
+                </Button>
+              }
+            />
+            <TooltipContent side="left">Expand sidebar</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     );
@@ -321,15 +328,21 @@ export function ChatSidebar({
         </span>
         <div className="flex items-center gap-1">
           <SidebarSettingsDialog />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleChatSidebar}
-            className="h-6 w-6"
-            title="Collapse sidebar"
-          >
-            <PanelRightOpen className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleChatSidebar}
+                  className="h-6 w-6"
+                >
+                  <PanelRightOpen className="h-4 w-4" />
+                </Button>
+              }
+            />
+            <TooltipContent side="left">Collapse sidebar</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

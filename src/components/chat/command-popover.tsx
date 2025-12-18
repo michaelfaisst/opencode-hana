@@ -82,9 +82,9 @@ export function CommandPopover({
                   onClick={() => onSelect(command)}
                   className={cn(
                     "w-full flex items-start gap-3 px-2 py-2 text-left rounded-sm",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    "focus:bg-accent focus:text-accent-foreground focus:outline-none",
-                    index === selectedIndex && "bg-accent text-accent-foreground"
+                    "hover:bg-muted",
+                    "focus:bg-muted focus:outline-none",
+                    index === selectedIndex && "bg-muted"
                   )}
                 >
                   <div className="shrink-0 mt-0.5 p-1 rounded bg-muted">

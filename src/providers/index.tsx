@@ -4,13 +4,16 @@ import { QueryProvider } from "./query-provider";
 import { OpencodeProvider } from "./opencode-provider";
 import { ThemeProvider } from "./theme-provider";
 import { EventsProvider } from "./events-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <QueryProvider>
         <OpencodeProvider>
-          <EventsProvider>{children}</EventsProvider>
+          <EventsProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </EventsProvider>
         </OpencodeProvider>
       </QueryProvider>
     </ThemeProvider>

@@ -95,9 +95,9 @@ export function FileMentionPopover({
                 onClick={() => onSelect(file)}
                 className={cn(
                   "w-full flex items-start gap-2 px-2 py-1.5 text-left rounded-sm text-sm",
-                  "hover:bg-accent hover:text-accent-foreground",
-                  "focus:bg-accent focus:text-accent-foreground focus:outline-none",
-                  index === selectedIndex && "bg-accent text-accent-foreground"
+                  "hover:bg-muted",
+                  "focus:bg-muted focus:outline-none",
+                  index === selectedIndex && "bg-muted"
                 )}
               >
                 <File className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />

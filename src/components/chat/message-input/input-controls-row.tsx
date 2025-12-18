@@ -1,5 +1,6 @@
 import { Image as ImageIcon, Lightbulb, Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ModelSelector, type SelectedModel } from "@/components/common";
 import { cn } from "@/lib/utils";
 import type { AgentMode } from "@/stores";
@@ -24,28 +25,36 @@ export function InputControlsRow({
       <div className="flex items-center gap-2">
         {/* Mode toggle button */}
         {onToggleMode && (
-          <Button
-            variant="outline"
-            onClick={onToggleMode}
-            disabled={isBusy}
-            className={cn(
-              "gap-1.5 text-xs w-20",
-              agentMode === "plan" ? "border-amber-500/50" : "border-blue-500/50"
-            )}
-            title={`Current mode: ${agentMode}. Press Tab to switch.`}
-          >
-            {agentMode === "plan" ? (
-              <>
-                <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
-                <span>Plan</span>
-              </>
-            ) : (
-              <>
-                <Hammer className="h-3.5 w-3.5 text-blue-500" />
-                <span>Build</span>
-              </>
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  onClick={onToggleMode}
+                  disabled={isBusy}
+                  className={cn(
+                    "gap-1.5 text-xs w-20",
+                    agentMode === "plan" ? "border-amber-500/50" : "border-blue-500/50"
+                  )}
+                >
+                  {agentMode === "plan" ? (
+                    <>
+                      <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Plan</span>
+                    </>
+                  ) : (
+                    <>
+                      <Hammer className="h-3.5 w-3.5 text-blue-500" />
+                      <span>Build</span>
+                    </>
+                  )}
+                </Button>
+              }
+            />
+            <TooltipContent>
+              Current mode: {agentMode}. Press Tab to switch.
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {/* Model selector */}

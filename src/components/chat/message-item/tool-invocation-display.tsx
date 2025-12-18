@@ -382,44 +382,27 @@ const BashToolDisplay = memo(function BashToolDisplay({
     return null;
   }, [state.status, state.output, state.error]);
 
-  // Truncate command for display in summary
-  const displayCommand =
-    bashInput.command && bashInput.command.length > 60
-      ? bashInput.command.slice(0, 60) + "…"
-      : bashInput.command;
-
   return (
     <details
       className="rounded border border-border bg-muted/50"
       open={isOpen}
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
     >
-      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 min-w-0">
         {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
+          <ChevronDown className="h-3 w-3 shrink-0" />
         ) : (
-          <ChevronRight className="h-3 w-3" />
+          <ChevronRight className="h-3 w-3 shrink-0" />
         )}
-        <Terminal className="h-3 w-3" />
-        <span className="font-mono text-foreground/70 truncate flex-1">
-          {displayCommand}
+        <Terminal className="h-3 w-3 shrink-0" />
+        <span className="font-mono text-foreground/70 truncate">
+          {bashInput.command}
         </span>
-        <span className="ml-auto">{statusIcon}</span>
+        <span className="ml-auto shrink-0">{statusIcon}</span>
       </summary>
       {/* Only render content when open */}
       {isOpen && (
         <div className="border-t border-border">
-          {/* Full command if truncated */}
-          {bashInput.command && bashInput.command.length > 60 && (
-            <div className="px-3 py-2 border-b border-border">
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                Command
-              </div>
-              <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded whitespace-pre-wrap">
-                {bashInput.command}
-              </pre>
-            </div>
-          )}
 
           {/* Output */}
           {outputContent && (

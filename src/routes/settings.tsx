@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -258,14 +259,20 @@ export function SettingsPage() {
                   </ComboboxContent>
                 </Combobox>
                 {defaultModel && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={clearDefaultModel}
-                    title="Clear default model"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={clearDefaultModel}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>Clear default model</TooltipContent>
+                  </Tooltip>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -423,14 +430,20 @@ export function SettingsPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => previewSound(selectedSound)}
-                        title="Preview sound"
-                      >
-                        <Volume2 className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => previewSound(selectedSound)}
+                            >
+                              <Volume2 className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Preview sound</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 )}

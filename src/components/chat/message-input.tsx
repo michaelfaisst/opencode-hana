@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, memo, useMemo } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { FileMentionPopover } from "./file-mention-popover";
 import { CommandPopover } from "./command-popover";
 import { ImageLightbox } from "./image-lightbox";
@@ -491,16 +492,34 @@ export const MessageInput = memo(function MessageInput({
             rows={1}
           />
         </div>
-        <Button
-          onClick={handleSubmit}
-          disabled={!hasContent || disabled}
-          size="icon"
-          className="shrink-0 h-[44px] w-[44px]"
-          title={isBusy ? "Message will be queued" : undefined}
-        >
-          <Send className="h-4 w-4" />
-          <span className="sr-only">Send message</span>
-        </Button>
+        {isBusy ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!hasContent || disabled}
+                  size="icon"
+                  className="shrink-0 h-[44px] w-[44px]"
+                >
+                  <Send className="h-4 w-4" />
+                  <span className="sr-only">Send message</span>
+                </Button>
+              }
+            />
+            <TooltipContent>Message will be queued</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            onClick={handleSubmit}
+            disabled={!hasContent || disabled}
+            size="icon"
+            className="shrink-0 h-[44px] w-[44px]"
+          >
+            <Send className="h-4 w-4" />
+            <span className="sr-only">Send message</span>
+          </Button>
+        )}
       </div>
 
       {/* Controls row: mode toggle, model selector, and hints */}

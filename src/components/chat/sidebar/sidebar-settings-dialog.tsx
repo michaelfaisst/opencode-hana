@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   useSidebarSettingsStore,
@@ -129,13 +130,20 @@ export function SidebarSettingsDialog({ trigger }: SidebarSettingsDialogProps) {
       {trigger ? (
         <DialogTrigger render={trigger} />
       ) : (
-        <DialogTrigger
-          render={
-            <Button variant="ghost" size="icon" className="h-6 w-6">
-              <Settings2 className="h-4 w-4" />
-            </Button>
-          }
-        />
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <DialogTrigger
+                render={
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            }
+          />
+          <TooltipContent side="left">Sidebar settings</TooltipContent>
+        </Tooltip>
       )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

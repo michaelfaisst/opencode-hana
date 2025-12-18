@@ -3,7 +3,7 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 import { cn } from "@/lib/utils"
 
 function TooltipProvider({
-  delay = 0,
+  delay = 300,
   ...props
 }: TooltipPrimitive.Provider.Props) {
   return (
@@ -16,11 +16,7 @@ function TooltipProvider({
 }
 
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
-  return (
-    <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
-    </TooltipProvider>
-  )
+  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {

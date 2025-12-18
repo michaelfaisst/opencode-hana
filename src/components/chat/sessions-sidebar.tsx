@@ -137,30 +137,44 @@ export function SessionsSidebar(_props: SessionsSidebarProps) {
           )}
         >
           {!isCollapsed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setCreateDialogOpen(true)}
-              disabled={createSession.isPending}
-              title="New session"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setCreateDialogOpen(true)}
+                    disabled={createSession.isPending}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <TooltipContent>New session</TooltipContent>
+            </Tooltip>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={toggleSessionsSidebar}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <PanelLeft className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={toggleSessionsSidebar}
+                >
+                  {isCollapsed ? (
+                    <PanelLeft className="h-4 w-4" />
+                  ) : (
+                    <PanelLeftClose className="h-4 w-4" />
+                  )}
+                </Button>
+              }
+            />
+            <TooltipContent side="right">
+              {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { CollapsibleSection } from "./collapsible-section";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import type { McpServersProps } from "./types";
 import type { McpServer, McpStatus } from "@/hooks/use-mcp-servers";
 import { useConnectMcpServer, useDisconnectMcpServer } from "@/hooks";
@@ -128,26 +129,32 @@ function McpServerRow({ server }: McpServerRowProps) {
   };
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 px-2 py-1.5 rounded-sm",
-        className
-      )}
-      title={label}
-    >
-      <div className="shrink-0">{icon}</div>
-      <p className="text-xs truncate flex-1">{server.name}</p>
-      <div className="shrink-0 flex items-center">
-        {isLoading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-        ) : (
-          <Switch
-            size="sm"
-            checked={isConnected}
-            onCheckedChange={handleToggle}
-          />
-        )}
-      </div>
-    </div>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <div
+            className={cn(
+              "flex items-center gap-2 px-2 py-1.5 rounded-sm",
+              className
+            )}
+          >
+            <div className="shrink-0">{icon}</div>
+            <p className="text-xs truncate flex-1">{server.name}</p>
+            <div className="shrink-0 flex items-center">
+              {isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              ) : (
+                <Switch
+                  size="sm"
+                  checked={isConnected}
+                  onCheckedChange={handleToggle}
+                />
+              )}
+            </div>
+          </div>
+        }
+      />
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }

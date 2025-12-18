@@ -130,6 +130,9 @@
   html, body, #root {
     @apply h-full;
     }
+  button, [role="button"] {
+    @apply cursor-pointer;
+    }
 }
 
 /* Shiki inline code styles - remove default pre padding for diff viewers */

@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { COMMANDS, type Command } from "@/hooks/use-commands";
 import { cn } from "@/lib/utils";
 
@@ -39,18 +40,26 @@ export const CommandToolbar = memo(function CommandToolbar({
         const isDisabled = isCommandDisabled(command);
 
         return (
-          <Button
-            key={command.name}
-            variant="outline"
-            size="sm"
-            onClick={() => onCommand(command)}
-            disabled={isDisabled}
-            title={`${command.label}: ${command.description}${command.shortcut ? ` (${command.shortcut})` : ""}`}
-            className="h-7 px-2 gap-1.5 text-xs"
-          >
-            <Icon className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{command.label}</span>
-          </Button>
+          <Tooltip key={command.name}>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onCommand(command)}
+                  disabled={isDisabled}
+                  className="h-7 px-2 gap-1.5 text-xs"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{command.label}</span>
+                </Button>
+              }
+            />
+            <TooltipContent>
+              {command.label}: {command.description}
+              {command.shortcut && ` (${command.shortcut})`}
+            </TooltipContent>
+          </Tooltip>
         );
       })}
     </div>
