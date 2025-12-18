@@ -28,10 +28,9 @@ export function SidebarTasks({ todos }: TasksProps) {
       badge={badge}
       defaultOpen={true}
       storageKey="tasks"
-      className="flex-1 overflow-hidden flex flex-col border-b-0"
     >
       {todos.length > 0 ? (
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex flex-col">
           {/* Progress bar */}
           <div className="px-4 pb-2">
             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
@@ -49,12 +48,10 @@ export function SidebarTasks({ todos }: TasksProps) {
           </div>
 
           {/* Todo items */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="px-2 pb-2 space-y-1">
-              {todos.map((todo) => (
-                <TodoItemRow key={todo.id} todo={todo} />
-              ))}
-            </div>
+          <div className="px-2 pb-2 space-y-1">
+            {todos.map((todo) => (
+              <TodoItemRow key={todo.id} todo={todo} />
+            ))}
           </div>
         </div>
       ) : (

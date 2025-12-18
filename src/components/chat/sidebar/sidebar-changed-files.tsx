@@ -26,12 +26,10 @@ export function SidebarChangedFiles({ files }: ChangedFilesProps) {
       storageKey="changed-files"
     >
       {files.length > 0 ? (
-        <div className="max-h-40 overflow-y-auto">
-          <div className="px-2 pb-2 space-y-0.5">
-            {files.map((file) => (
-              <ChangedFileRow key={file.path} file={file} />
-            ))}
-          </div>
+        <div className="px-2 pb-2 space-y-0.5">
+          {files.map((file) => (
+            <ChangedFileRow key={file.path} file={file} />
+          ))}
         </div>
       ) : (
         <div className="px-4 pb-4">

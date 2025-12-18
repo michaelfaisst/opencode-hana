@@ -131,3 +131,42 @@
     @apply h-full;
     }
 }
+
+/* Shiki inline code styles - remove default pre padding for diff viewers */
+.shiki-inline pre {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  display: inline;
+}
+
+.shiki-inline pre code {
+  background: transparent !important;
+  padding: 0;
+}
+
+/* Custom scrollbar styling to match shadcn ScrollArea */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}

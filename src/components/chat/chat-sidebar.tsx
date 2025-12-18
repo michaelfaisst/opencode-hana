@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { COMMANDS, type Command } from "@/hooks/use-commands";
 import {
   SidebarActions,
@@ -332,10 +333,13 @@ export function ChatSidebar({
         </div>
       </div>
 
-      {/* Render sections based on settings */}
-      {sections
-        .filter((section) => section.enabled)
-        .map((section) => renderSection(section.id))}
+      {/* Scrollable content area */}
+      <ScrollArea className="flex-1 min-h-0">
+        {/* Render sections based on settings */}
+        {sections
+          .filter((section) => section.enabled)
+          .map((section) => renderSection(section.id))}
+      </ScrollArea>
     </div>
   );
 }

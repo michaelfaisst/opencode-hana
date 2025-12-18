@@ -90,7 +90,7 @@ export function DiffViewer({
         <table className="w-full border-collapse min-w-[600px]">
           <tbody>
             {rows.map((row, i) => (
-              <tr key={i} className="border-t border-border first:border-t-0">
+              <tr key={i}>
                 {/* Left side (old) */}
                 <td
                   className={cn(

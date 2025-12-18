@@ -2,7 +2,6 @@ import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { X, Image as ImageIcon } from "lucide-react";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
-import { StreamingIndicator } from "./streaming-indicator";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
 import { useProviders, type ImageAttachment, type Command } from "@/hooks";
@@ -159,10 +158,13 @@ export function ChatContainer({
     <div className="flex h-full">
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <MessageList messages={messages} isLoading={isLoadingMessages} />
-        {(isBusy || isRetrying) && (
-          <StreamingIndicator isBusy={isBusy} retryStatus={retryStatus} />
-        )}
+        <MessageList 
+          messages={messages} 
+          isLoading={isLoadingMessages}
+          isBusy={isBusy}
+          isRetrying={isRetrying}
+          retryStatus={retryStatus}
+        />
         
         {/* Queued messages */}
         {messageQueue.length > 0 && (
