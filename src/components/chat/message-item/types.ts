@@ -89,3 +89,10 @@ export interface BashInput {
   timeout?: number;
   workdir?: string;
 }
+
+export interface TaskInput {
+  description?: string;
+  prompt?: string;
+  subagent_type?: string;
+  session_id?: string;
+}

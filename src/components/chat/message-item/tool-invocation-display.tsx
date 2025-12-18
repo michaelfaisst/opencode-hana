@@ -10,6 +10,7 @@ import {
   ListTodo,
   ArrowLeft,
   ArrowRight,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DiffViewer } from "../diff-viewer";
@@ -22,6 +23,7 @@ import type {
   ReadInput,
   WriteInput,
   BashInput,
+  TaskInput,
 } from "./types";
 
 interface ToolInvocationDisplayProps {
@@ -57,6 +59,10 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
   // Check if this is a bash tool
   const isBashTool = tool === "bash";
   const bashInput = state.input as BashInput | undefined;
+
+  // Check if this is a task tool (subagent)
+  const isTaskTool = tool === "task";
+  const taskInput = state.input as TaskInput | undefined;
 
   const statusIcon = useMemo(() => {
     const icons = {
@@ -130,6 +136,19 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
     return (
       <BashToolDisplay
         bashInput={bashInput}
+        state={state}
+        statusIcon={statusIcon}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+    );
+  }
+
+  // Render task tool (subagent)
+  if (isTaskTool && taskInput) {
+    return (
+      <TaskToolDisplay
+        taskInput={taskInput}
         state={state}
         statusIcon={statusIcon}
         isOpen={isOpen}
@@ -407,6 +426,114 @@ const BashToolDisplay = memo(function BashToolDisplay({
             <div className="px-3 py-2">
               <div className="text-xs font-medium text-muted-foreground mb-1">
                 {state.status === "error" ? "Error" : "Output"}
+              </div>
+              <pre
+                className={cn(
+                  "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
+                  state.status === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-background"
+                )}
+              >
+                {outputContent}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </details>
+  );
+});
+
+interface TaskToolDisplayProps {
+  taskInput: TaskInput;
+  state: ToolPart["state"];
+  statusIcon: React.ReactNode;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+const TaskToolDisplay = memo(function TaskToolDisplay({
+  taskInput,
+  state,
+  statusIcon,
+  isOpen,
+  setIsOpen,
+}: TaskToolDisplayProps) {
+  // Format output for display
+  const outputContent = useMemo(() => {
+    if (state.status === "completed" && state.output) {
+      const output = state.output;
+      if (output === null || output === undefined) return "";
+      if (typeof output === "string") return output;
+      return JSON.stringify(output, null, 2);
+    }
+    if (state.status === "error" && state.error) {
+      return state.error;
+    }
+    return null;
+  }, [state.status, state.output, state.error]);
+
+  // Get display info
+  const agentType = taskInput.subagent_type || "general";
+  const description = taskInput.description || "Running subagent...";
+
+  // Determine status text
+  const statusText = useMemo(() => {
+    switch (state.status) {
+      case "pending":
+        return "Waiting...";
+      case "running":
+        return "Working...";
+      case "completed":
+        return "Done";
+      case "error":
+        return "Failed";
+      default:
+        return "";
+    }
+  }, [state.status]);
+
+  return (
+    <details
+      className="rounded border border-primary/30 bg-primary/5"
+      open={isOpen}
+      onToggle={(e) => setIsOpen(e.currentTarget.open)}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+        {isOpen ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+        <Bot className="h-3 w-3 text-primary" />
+        <span className="font-mono text-primary">{agentType}</span>
+        <span className="text-foreground/70 truncate flex-1">
+          {description}
+        </span>
+        <span className="text-xs text-muted-foreground">{statusText}</span>
+        <span className="ml-1">{statusIcon}</span>
+      </summary>
+      {/* Only render content when open */}
+      {isOpen && (
+        <div className="border-t border-primary/20">
+          {/* Prompt */}
+          {taskInput.prompt && (
+            <div className="px-3 py-2 border-b border-primary/20">
+              <div className="text-xs font-medium text-muted-foreground mb-1">
+                Task
+              </div>
+              <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                {taskInput.prompt}
+              </pre>
+            </div>
+          )}
+
+          {/* Output/Result */}
+          {outputContent && (
+            <div className="px-3 py-2">
+              <div className="text-xs font-medium text-muted-foreground mb-1">
+                {state.status === "error" ? "Error" : "Result"}
               </div>
               <pre
                 className={cn(
