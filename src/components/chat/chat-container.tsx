@@ -1,11 +1,12 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { X, Image as ImageIcon } from "lucide-react";
+import { X, Image as ImageIcon, Loader2, RefreshCw } from "lucide-react";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
 import { useProviders, type ImageAttachment, type Command } from "@/hooks";
 import { useAppSettingsStore } from "@/stores";
+import { cn } from "@/lib/utils";
 
 interface Part {
   type: string;
@@ -163,8 +164,33 @@ export function ChatContainer({
           isLoading={isLoadingMessages}
           isBusy={isBusy}
           isRetrying={isRetrying}
-          retryStatus={retryStatus}
         />
+        
+        {/* Streaming indicator - outside Virtuoso so it's always visible */}
+        <div
+          className={cn(
+            "grid transition-all duration-200 ease-in-out overflow-hidden",
+            (isBusy || isRetrying) ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          )}
+        >
+          <div className="min-h-0">
+            <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground border-t border-border bg-muted/30">
+              {isRetrying && retryStatus ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>
+                    Retry attempt {retryStatus.attempt}: {retryStatus.message}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Assistant is thinking...</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
         
         {/* Queued messages */}
         {messageQueue.length > 0 && (

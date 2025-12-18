@@ -1,11 +1,10 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { Virtuoso } from "react-virtuoso";
 import type { VirtuosoHandle } from "react-virtuoso";
-import { ArrowDown, Loader2, RefreshCw } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./message-item";
 import { Skeleton } from "@/components/common/loading-skeleton";
 import { Button } from "@/components/ui/button";
-
 
 interface Part {
   type: string;
@@ -25,49 +24,11 @@ interface Message {
   parts: Part[];
 }
 
-interface RetryStatus {
-  type: "retry";
-  attempt: number;
-  message: string;
-  next: number;
-}
-
 interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
   isBusy?: boolean;
   isRetrying?: boolean;
-  retryStatus?: RetryStatus;
-}
-
-// Streaming indicator component - rendered in Footer, outside virtualized list
-function StreamingIndicator({ retryStatus }: { retryStatus?: RetryStatus }) {
-  if (retryStatus) {
-    const nextRetryTime = new Date(retryStatus.next).toLocaleTimeString();
-    return (
-      <div className="flex items-center gap-2 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
-        <RefreshCw className="h-4 w-4 animate-spin" />
-        <span>
-          Retrying (attempt {retryStatus.attempt}): {retryStatus.message}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          Next attempt at {nextRetryTime}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
-      <Loader2 className="h-4 w-4 animate-spin" />
-      <span>Assistant is thinking</span>
-      <div className="flex gap-0.5">
-        <span className="animate-bounce" style={{ animationDelay: "0ms" }}>.</span>
-        <span className="animate-bounce" style={{ animationDelay: "150ms" }}>.</span>
-        <span className="animate-bounce" style={{ animationDelay: "300ms" }}>.</span>
-      </div>
-    </div>
-  );
 }
 
 export function MessageList({ 
@@ -75,9 +36,9 @@ export function MessageList({
   isLoading, 
   isBusy,
   isRetrying,
-  retryStatus,
 }: MessageListProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const atBottomRef = useRef(true);
   const prevMessageCountRef = useRef(0);
@@ -88,11 +49,18 @@ export function MessageList({
     atBottomRef.current = atBottom;
   }, [atBottom]);
 
-  const showStreamingIndicator = isBusy || isRetrying;
+  // Helper to scroll the container to the very bottom
+  const scrollToVeryBottom = useCallback(() => {
+    const scroller = containerRef.current?.querySelector('[data-virtuoso-scroller="true"]') as HTMLElement | null;
+    if (scroller) {
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+  }, []);
 
   // Scroll to bottom when:
   // 1. We just became busy (user sent a message)
   // 2. A new message was added while we were at bottom
+  // 3. Just finished streaming (busy -> not busy) - final scroll to catch last content
   useEffect(() => {
     const messageCount = messages.length;
     const prevMessageCount = prevMessageCountRef.current;
@@ -113,12 +81,22 @@ export function MessageList({
       return;
     }
     
-    // Case 2: New message added - scroll if we were at bottom
+    // Case 2: Just finished streaming - do a final scroll after content settles
+    if (!isNowBusy && wasBusy && atBottomRef.current) {
+      // Use multiple delayed scrolls to ensure we catch the final rendered height
+      // Use direct DOM scroll to guarantee we reach the absolute bottom
+      scrollToVeryBottom();
+      setTimeout(scrollToVeryBottom, 100);
+      setTimeout(scrollToVeryBottom, 300);
+      return;
+    }
+    
+    // Case 3: New message added - scroll if we were at bottom
     if (messageCount > prevMessageCount && atBottomRef.current) {
       virtuosoRef.current?.scrollToIndex({
         index: messages.length - 1,
         align: "end",
-        behavior: "smooth",
+        behavior: "auto",
       });
       return;
     }
@@ -126,6 +104,7 @@ export function MessageList({
 
   // Scroll during streaming when content updates and we're at bottom
   // This handles the case where message content grows but count stays the same
+  // Use "auto" (instant) during streaming since smooth can't keep up with rapid updates
   useEffect(() => {
     if ((isBusy || isRetrying) && atBottomRef.current) {
       virtuosoRef.current?.scrollToIndex({
@@ -141,15 +120,16 @@ export function MessageList({
     virtuosoRef.current?.scrollToIndex({
       index: messages.length - 1,
       align: "end",
-      behavior: "smooth",
+      behavior: "auto",
     });
   }, [messages.length]);
 
   // followOutput callback - follow when at bottom during streaming
+  // Use "auto" for instant scroll during streaming to keep up with content
   const followOutput = useCallback(
     (isAtBottom: boolean) => {
       // Auto-scroll when user is at bottom
-      return isAtBottom ? "smooth" : false;
+      return isAtBottom ? "auto" : false;
     },
     []
   );
@@ -163,12 +143,6 @@ export function MessageList({
   const itemContent = useCallback((_index: number, item: Message) => {
     return <MessageItem role={item.info.role} parts={item.parts} />;
   }, []);
-
-  // Footer component for streaming indicator
-  const Footer = useCallback(() => {
-    if (!showStreamingIndicator) return null;
-    return <StreamingIndicator retryStatus={retryStatus} />;
-  }, [showStreamingIndicator, retryStatus]);
 
   if (isLoading) {
     return (
@@ -198,7 +172,7 @@ export function MessageList({
   }
 
   return (
-    <div className="relative flex-1 overflow-hidden">
+    <div ref={containerRef} className="relative flex-1 overflow-hidden">
       <Virtuoso
         ref={virtuosoRef}
         data={messages}
@@ -209,7 +183,6 @@ export function MessageList({
         followOutput={followOutput}
         initialTopMostItemIndex={messages.length - 1}
         alignToBottom
-        components={{ Footer }}
         className="absolute inset-0 custom-scrollbar"
       />
 

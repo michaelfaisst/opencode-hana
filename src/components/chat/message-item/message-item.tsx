@@ -67,7 +67,7 @@ export const MessageItem = memo(function MessageItem({
   return (
     <div
       className={cn(
-        "flex gap-3 px-4 py-3",
+        "flex gap-3 px-4 py-3 animate-message-appear",
         isUser ? "bg-muted/50" : "bg-background"
       )}
     >
