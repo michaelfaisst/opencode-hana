@@ -1,4 +1,6 @@
-import { useEffect, useRef, useCallback, useState, useMemo } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { Virtuoso } from "react-virtuoso";
+import type { VirtuosoHandle } from "react-virtuoso";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./message-item";
 import { Skeleton } from "@/components/common/loading-skeleton";
@@ -28,56 +30,28 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, isLoading }: MessageListProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
-  // Keep a ref for the auto-scroll logic (doesn't need to trigger re-renders)
-  const isNearBottomRef = useRef(true);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const [atBottom, setAtBottom] = useState(true);
 
-  // Create a fingerprint of the messages to detect content changes
-  // This captures both new messages and updated content (streaming)
-  const messagesFingerprint = useMemo(() => {
-    return messages.map(m => {
-      // Get the total text length of all parts to detect streaming updates
-      const partsLength = m.parts.reduce((acc, p) => {
-        return acc + (p.text?.length ?? 0) + (p.type === "tool-invocation" ? 1 : 0);
-      }, 0);
-      return `${m.info.id}:${m.parts.length}:${partsLength}`;
-    }).join("|");
-  }, [messages]);
-
-  // Check if user is near bottom of scroll
-  const checkIfNearBottom = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return true;
-    
-    const threshold = 150; // pixels from bottom
-    const isNear = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
-    isNearBottomRef.current = isNear;
-    setShowScrollButton(!isNear);
-    return isNear;
-  }, []);
-
-  // Auto-scroll when messages change (new messages or content updates) and user is near bottom
+  // Auto-scroll to bottom when new messages arrive and user was at bottom
   useEffect(() => {
-    // Only auto-scroll if user was near bottom
-    if (isNearBottomRef.current) {
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (atBottom && messages.length > 0) {
+      virtuosoRef.current?.scrollToIndex({
+        index: messages.length - 1,
+        align: "end",
+        behavior: "auto",
       });
     }
-  }, [messagesFingerprint]);
+  }, [messages.length, atBottom]);
 
-  // Track scroll position
-  const handleScroll = useCallback(() => {
-    checkIfNearBottom();
-  }, [checkIfNearBottom]);
-
-  // Scroll to bottom handler
+  // Handle scroll to bottom button click
   const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+    virtuosoRef.current?.scrollToIndex({
+      index: messages.length - 1,
+      align: "end",
+      behavior: "smooth",
+    });
+  }, [messages.length]);
 
   if (isLoading) {
     return (
@@ -108,23 +82,20 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
 
   return (
     <div className="relative flex-1 overflow-hidden">
-      <div 
-        ref={containerRef}
-        className="absolute inset-0 overflow-y-auto"
-        onScroll={handleScroll}
-      >
-        {messages.map((message) => (
-          <MessageItem
-            key={message.info.id}
-            role={message.info.role}
-            parts={message.parts}
-          />
-        ))}
-        <div ref={bottomRef} />
-      </div>
-      
+      <Virtuoso
+        ref={virtuosoRef}
+        data={messages}
+        atBottomStateChange={setAtBottom}
+        atBottomThreshold={150}
+        itemContent={(_, message) => (
+          <MessageItem role={message.info.role} parts={message.parts} />
+        )}
+        followOutput="auto"
+        className="absolute inset-0"
+      />
+
       {/* Scroll to bottom button */}
-      {showScrollButton && (
+      {!atBottom && (
         <Button
           variant="secondary"
           size="icon"

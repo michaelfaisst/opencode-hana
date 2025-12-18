@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useMemo } from "react";
 import {
   Terminal,
   ChevronDown,
@@ -15,13 +15,22 @@ import { cn } from "@/lib/utils";
 import { DiffViewer } from "../diff-viewer";
 import { InlineTodoList } from "../todo-list";
 import { FileContentViewer } from "./file-content-viewer";
-import type { ToolPart, EditInput, TodoInput, ReadInput, WriteInput, BashInput } from "./types";
+import type {
+  ToolPart,
+  EditInput,
+  TodoInput,
+  ReadInput,
+  WriteInput,
+  BashInput,
+} from "./types";
 
 interface ToolInvocationDisplayProps {
   part: ToolPart;
 }
 
-export function ToolInvocationDisplay({ part }: ToolInvocationDisplayProps) {
+export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
+  part,
+}: ToolInvocationDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { tool, state } = part;
 
@@ -49,14 +58,17 @@ export function ToolInvocationDisplay({ part }: ToolInvocationDisplayProps) {
   const isBashTool = tool === "bash";
   const bashInput = state.input as BashInput | undefined;
 
-  const statusIcon = {
-    pending: (
-      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-    ),
-    running: <Loader2 className="h-3 w-3 animate-spin text-primary" />,
-    completed: <Check className="h-3 w-3 text-green-500" />,
-    error: <X className="h-3 w-3 text-destructive" />,
-  }[state.status] || null;
+  const statusIcon = useMemo(() => {
+    const icons = {
+      pending: (
+        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+      ),
+      running: <Loader2 className="h-3 w-3 animate-spin text-primary" />,
+      completed: <Check className="h-3 w-3 text-green-500" />,
+      error: <X className="h-3 w-3 text-destructive" />,
+    };
+    return icons[state.status as keyof typeof icons] || null;
+  }, [state.status]);
 
   // Render todowrite tool with inline todo list
   if (hasTodos) {
@@ -136,7 +148,7 @@ export function ToolInvocationDisplay({ part }: ToolInvocationDisplayProps) {
       setIsOpen={setIsOpen}
     />
   );
-}
+});
 
 interface TodoToolDisplayProps {
   todoInput: TodoInput;
@@ -145,7 +157,7 @@ interface TodoToolDisplayProps {
   setIsOpen: (open: boolean) => void;
 }
 
-function TodoToolDisplay({
+const TodoToolDisplay = memo(function TodoToolDisplay({
   todoInput,
   statusIcon,
   isOpen,
@@ -172,12 +184,15 @@ function TodoToolDisplay({
         </span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
-      <div className="border-t border-border p-2">
-        <InlineTodoList todos={todoInput.todos!} />
-      </div>
+      {/* Only render content when open for performance */}
+      {isOpen && (
+        <div className="border-t border-border p-2">
+          <InlineTodoList todos={todoInput.todos!} />
+        </div>
+      )}
     </details>
   );
-}
+});
 
 interface EditToolDisplayProps {
   editInput: EditInput;
@@ -187,7 +202,7 @@ interface EditToolDisplayProps {
   setIsOpen: (open: boolean) => void;
 }
 
-function EditToolDisplay({
+const EditToolDisplay = memo(function EditToolDisplay({
   editInput,
   state,
   statusIcon,
@@ -213,27 +228,30 @@ function EditToolDisplay({
         </span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
-      <div className="border-t border-border">
-        <DiffViewer
-          oldString={editInput.oldString!}
-          newString={editInput.newString!}
-          filePath={editInput.filePath}
-        />
-        {/* Error output */}
-        {state.status === "error" && state.error && (
-          <div className="mt-2 px-3 py-2 bg-destructive/10 rounded">
-            <div className="text-xs font-medium text-destructive mb-1">
-              Error
+      {/* Only render expensive DiffViewer when open */}
+      {isOpen && (
+        <div className="border-t border-border">
+          <DiffViewer
+            oldString={editInput.oldString!}
+            newString={editInput.newString!}
+            filePath={editInput.filePath}
+          />
+          {/* Error output */}
+          {state.status === "error" && state.error && (
+            <div className="mt-2 px-3 py-2 bg-destructive/10 rounded">
+              <div className="text-xs font-medium text-destructive mb-1">
+                Error
+              </div>
+              <pre className="text-xs font-mono text-destructive whitespace-pre-wrap">
+                {state.error}
+              </pre>
             </div>
-            <pre className="text-xs font-mono text-destructive whitespace-pre-wrap">
-              {state.error}
-            </pre>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </details>
   );
-}
+});
 
 interface FileToolDisplayProps {
   type: "read" | "write";
@@ -245,7 +263,7 @@ interface FileToolDisplayProps {
   setIsOpen: (open: boolean) => void;
 }
 
-function FileToolDisplay({
+const FileToolDisplay = memo(function FileToolDisplay({
   type,
   filePath,
   content,
@@ -281,37 +299,40 @@ function FileToolDisplay({
         </span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
-      <div className="border-t border-border">
-        {/* File content with syntax highlighting */}
-        {hasContent && (
-          <FileContentViewer
-            content={displayContent}
-            filePath={filePath}
-            maxHeight="400px"
-            forceHighlight={type === "write"}
-          />
-        )}
+      {/* Only render expensive FileContentViewer when open */}
+      {isOpen && (
+        <div className="border-t border-border">
+          {/* File content with syntax highlighting */}
+          {hasContent && (
+            <FileContentViewer
+              content={displayContent}
+              filePath={filePath}
+              maxHeight="400px"
+              forceHighlight={type === "write"}
+            />
+          )}
 
-        {/* Error output */}
-        {hasError && (
-          <div className="px-3 py-2">
-            <div className="text-xs font-medium text-destructive mb-1">
-              Error
+          {/* Error output */}
+          {hasError && (
+            <div className="px-3 py-2">
+              <div className="text-xs font-medium text-destructive mb-1">
+                Error
+              </div>
+              <pre
+                className={cn(
+                  "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
+                  "bg-destructive/10 text-destructive"
+                )}
+              >
+                {state.error}
+              </pre>
             </div>
-            <pre
-              className={cn(
-                "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
-                "bg-destructive/10 text-destructive"
-              )}
-            >
-              {state.error}
-            </pre>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </details>
   );
-}
+});
 
 interface BashToolDisplayProps {
   bashInput: BashInput;
@@ -321,7 +342,7 @@ interface BashToolDisplayProps {
   setIsOpen: (open: boolean) => void;
 }
 
-function BashToolDisplay({
+const BashToolDisplay = memo(function BashToolDisplay({
   bashInput,
   state,
   statusIcon,
@@ -329,23 +350,24 @@ function BashToolDisplay({
   setIsOpen,
 }: BashToolDisplayProps) {
   // Format output for display
-  const formatOutput = (output: unknown): string => {
-    if (output === null || output === undefined) return "";
-    if (typeof output === "string") return output;
-    return JSON.stringify(output, null, 2);
-  };
-
-  const outputContent =
-    state.status === "completed" && state.output
-      ? formatOutput(state.output)
-      : state.status === "error" && state.error
-        ? state.error
-        : null;
+  const outputContent = useMemo(() => {
+    if (state.status === "completed" && state.output) {
+      const output = state.output;
+      if (output === null || output === undefined) return "";
+      if (typeof output === "string") return output;
+      return JSON.stringify(output, null, 2);
+    }
+    if (state.status === "error" && state.error) {
+      return state.error;
+    }
+    return null;
+  }, [state.status, state.output, state.error]);
 
   // Truncate command for display in summary
-  const displayCommand = bashInput.command && bashInput.command.length > 60
-    ? bashInput.command.slice(0, 60) + "…"
-    : bashInput.command;
+  const displayCommand =
+    bashInput.command && bashInput.command.length > 60
+      ? bashInput.command.slice(0, 60) + "…"
+      : bashInput.command;
 
   return (
     <details
@@ -365,41 +387,44 @@ function BashToolDisplay({
         </span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
-      <div className="border-t border-border">
-        {/* Full command if truncated */}
-        {bashInput.command && bashInput.command.length > 60 && (
-          <div className="px-3 py-2 border-b border-border">
-            <div className="text-xs font-medium text-muted-foreground mb-1">
-              Command
+      {/* Only render content when open */}
+      {isOpen && (
+        <div className="border-t border-border">
+          {/* Full command if truncated */}
+          {bashInput.command && bashInput.command.length > 60 && (
+            <div className="px-3 py-2 border-b border-border">
+              <div className="text-xs font-medium text-muted-foreground mb-1">
+                Command
+              </div>
+              <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded whitespace-pre-wrap">
+                {bashInput.command}
+              </pre>
             </div>
-            <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded whitespace-pre-wrap">
-              {bashInput.command}
-            </pre>
-          </div>
-        )}
+          )}
 
-        {/* Output */}
-        {outputContent && (
-          <div className="px-3 py-2">
-            <div className="text-xs font-medium text-muted-foreground mb-1">
-              {state.status === "error" ? "Error" : "Output"}
+          {/* Output */}
+          {outputContent && (
+            <div className="px-3 py-2">
+              <div className="text-xs font-medium text-muted-foreground mb-1">
+                {state.status === "error" ? "Error" : "Output"}
+              </div>
+              <pre
+                className={cn(
+                  "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
+                  state.status === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-background"
+                )}
+              >
+                {outputContent}
+              </pre>
             </div>
-            <pre
-              className={cn(
-                "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
-                state.status === "error"
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-background"
-              )}
-            >
-              {outputContent}
-            </pre>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </details>
   );
-}
+});
 
 interface DefaultToolDisplayProps {
   tool: string;
@@ -409,7 +434,7 @@ interface DefaultToolDisplayProps {
   setIsOpen: (open: boolean) => void;
 }
 
-function DefaultToolDisplay({
+const DefaultToolDisplay = memo(function DefaultToolDisplay({
   tool,
   state,
   statusIcon,
@@ -417,18 +442,18 @@ function DefaultToolDisplay({
   setIsOpen,
 }: DefaultToolDisplayProps) {
   // Format output for display
-  const formatOutput = (output: unknown): string => {
-    if (output === null || output === undefined) return "";
-    if (typeof output === "string") return output;
-    return JSON.stringify(output, null, 2);
-  };
-
-  const outputContent =
-    state.status === "completed" && state.output
-      ? formatOutput(state.output)
-      : state.status === "error" && state.error
-        ? state.error
-        : null;
+  const outputContent = useMemo(() => {
+    if (state.status === "completed" && state.output) {
+      const output = state.output;
+      if (output === null || output === undefined) return "";
+      if (typeof output === "string") return output;
+      return JSON.stringify(output, null, 2);
+    }
+    if (state.status === "error" && state.error) {
+      return state.error;
+    }
+    return null;
+  }, [state.status, state.output, state.error]);
 
   return (
     <details
@@ -446,38 +471,41 @@ function DefaultToolDisplay({
         <span className="font-mono">{tool}</span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
-      <div className="border-t border-border">
-        {/* Input */}
-        {state.input && Object.keys(state.input).length > 0 && (
-          <div className="px-3 py-2 border-b border-border">
-            <div className="text-xs font-medium text-muted-foreground mb-1">
-              Input
+      {/* Only render content when open */}
+      {isOpen && (
+        <div className="border-t border-border">
+          {/* Input */}
+          {state.input && Object.keys(state.input).length > 0 && (
+            <div className="px-3 py-2 border-b border-border">
+              <div className="text-xs font-medium text-muted-foreground mb-1">
+                Input
+              </div>
+              <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded">
+                {JSON.stringify(state.input, null, 2)}
+              </pre>
             </div>
-            <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded">
-              {JSON.stringify(state.input, null, 2)}
-            </pre>
-          </div>
-        )}
+          )}
 
-        {/* Output */}
-        {outputContent && (
-          <div className="px-3 py-2">
-            <div className="text-xs font-medium text-muted-foreground mb-1">
-              {state.status === "error" ? "Error" : "Output"}
+          {/* Output */}
+          {outputContent && (
+            <div className="px-3 py-2">
+              <div className="text-xs font-medium text-muted-foreground mb-1">
+                {state.status === "error" ? "Error" : "Output"}
+              </div>
+              <pre
+                className={cn(
+                  "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
+                  state.status === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-background"
+                )}
+              >
+                {outputContent}
+              </pre>
             </div>
-            <pre
-              className={cn(
-                "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
-                state.status === "error"
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-background"
-              )}
-            >
-              {outputContent}
-            </pre>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </details>
   );
-}
+});

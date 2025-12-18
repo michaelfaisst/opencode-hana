@@ -1,7 +1,7 @@
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { ShikiCodeBlock } from "./shiki-code";
 import { cn } from "@/lib/utils";
 
 interface MarkdownContentProps {
@@ -9,9 +9,14 @@ interface MarkdownContentProps {
   className?: string;
 }
 
-export function MarkdownContent({ content, className }: MarkdownContentProps) {
+export const MarkdownContent = memo(function MarkdownContent({
+  content,
+  className,
+}: MarkdownContentProps) {
   return (
-    <div className={cn("prose prose-sm dark:prose-invert max-w-none", className)}>
+    <div
+      className={cn("prose prose-sm dark:prose-invert max-w-none", className)}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -31,20 +36,11 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             }
 
             return (
-              <SyntaxHighlighter
-                style={oneDark}
+              <ShikiCodeBlock
+                code={String(children).replace(/\n$/, "")}
                 language={match[1]}
-                PreTag="div"
-                customStyle={{
-                  margin: 0,
-                  borderRadius: 0,
-                  marginTop: "0.5rem",
-                  marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
-                }}
-              >
-                {String(children).replace(/\n$/, "")}
-              </SyntaxHighlighter>
+                className="my-2 rounded"
+              />
             );
           },
           pre({ children }) {
@@ -80,4 +76,4 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
       </ReactMarkdown>
     </div>
   );
-}
+});

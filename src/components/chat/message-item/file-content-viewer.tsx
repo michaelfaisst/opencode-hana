@@ -1,6 +1,5 @@
-import { useMemo } from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useMemo, memo } from "react";
+import { ShikiCodeBlock } from "@/components/common/shiki-code";
 import { getLanguageFromPath } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
@@ -21,11 +20,11 @@ interface FileContentViewerProps {
  * 00001| line content
  * 00002| line content
  * </file>
- * 
+ *
  * (End of file - total X lines)
- * 
+ *
  * Or sometimes just plain content without wrappers.
- * 
+ *
  * Returns isFileContent: true if the content appears to be file content
  * (has <file> tags or line numbers), false otherwise.
  */
@@ -55,7 +54,7 @@ function parseFileContent(content: string): {
 
   // Split into lines
   const lines = rawContent.split("\n");
-  
+
   // Check for line number format: "00001| content" (5 digits + pipe + optional space)
   const lineNumberPattern = /^(\d{5})\|\s?(.*)$/;
 
@@ -65,7 +64,7 @@ function parseFileContent(content: string): {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const match = line.match(lineNumberPattern);
-    
+
     if (match) {
       hasLineNumbers = true;
       if (parsedLines.length === 0) {
@@ -90,7 +89,7 @@ function parseFileContent(content: string): {
   };
 }
 
-export function FileContentViewer({
+export const FileContentViewer = memo(function FileContentViewer({
   content,
   filePath,
   startLine: propStartLine,
@@ -98,15 +97,13 @@ export function FileContentViewer({
   className,
   forceHighlight = false,
 }: FileContentViewerProps) {
-  const { lines, startLine: parsedStartLine, isFileContent } = useMemo(
-    () => parseFileContent(content),
-    [content]
-  );
+  const {
+    lines,
+    startLine: parsedStartLine,
+    isFileContent,
+  } = useMemo(() => parseFileContent(content), [content]);
 
-  const language = useMemo(
-    () => getLanguageFromPath(filePath),
-    [filePath]
-  );
+  const language = useMemo(() => getLanguageFromPath(filePath), [filePath]);
 
   const effectiveStartLine = propStartLine ?? parsedStartLine;
   const codeContent = isFileContent ? lines.join("\n") : content;
@@ -114,10 +111,7 @@ export function FileContentViewer({
   // If it's not file content and not forced, show plain text
   if (!isFileContent && !forceHighlight) {
     return (
-      <div
-        className={cn("overflow-auto", className)}
-        style={{ maxHeight }}
-      >
+      <div className={cn("overflow-auto", className)} style={{ maxHeight }}>
         <pre className="p-3 text-xs font-mono bg-background whitespace-pre-wrap">
           {content}
         </pre>
@@ -125,43 +119,18 @@ export function FileContentViewer({
     );
   }
 
-  // Custom style to match the app theme
-  const customStyle = {
-    margin: 0,
-    padding: "0.75rem",
-    fontSize: "0.75rem",
-    lineHeight: "1.5",
-    background: "transparent",
-  };
-
   return (
     <div
-      className={cn(
-        "overflow-auto bg-[#282c34] rounded-b",
-        className
-      )}
+      className={cn("overflow-auto bg-[#24292e] rounded-b", className)}
       style={{ maxHeight }}
     >
-      <SyntaxHighlighter
+      <ShikiCodeBlock
+        code={codeContent}
         language={language}
-        style={oneDark}
         showLineNumbers
-        startingLineNumber={effectiveStartLine}
-        customStyle={customStyle}
-        lineNumberStyle={{
-          minWidth: "3em",
-          paddingRight: "1em",
-          color: "#636d83",
-          userSelect: "none",
-        }}
-        codeTagProps={{
-          style: {
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          },
-        }}
-      >
-        {codeContent}
-      </SyntaxHighlighter>
+        startLine={effectiveStartLine}
+        className="p-3 text-xs"
+      />
     </div>
   );
-}
+});
