@@ -202,12 +202,11 @@ export function useEvents(): EventsHookResult {
       eventSourceRef.current = null;
     }
 
-    console.log("[Events] Connecting to SSE...");
-    const eventSource = new EventSource("/event");
+    // Use /global/event to receive events from all directories
+    const eventSource = new EventSource("/global/event");
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
-      console.log("[Events] Connected");
       // Clear all session statuses on reconnect - assume idle until we hear otherwise
       // This prevents stale "busy" states from persisting after reconnection
       setState({ isConnected: true, sessionStatuses: new Map() });
@@ -215,10 +214,11 @@ export function useEvents(): EventsHookResult {
 
     eventSource.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data) as Event;
-        handleEvent(data);
-      } catch (error) {
-        console.error("[Events] Failed to parse event:", error, event.data);
+        // GlobalEvent wraps the actual event with a directory field
+        const globalEvent = JSON.parse(event.data) as { directory: string; payload: Event };
+        handleEvent(globalEvent.payload);
+      } catch {
+        // Silently ignore parse errors
       }
     };
 

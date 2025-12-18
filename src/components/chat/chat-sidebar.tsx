@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import {
   type SessionStats,
   type ContextUsageData,
 } from "./sidebar";
-import { useMcpServers, useSidebarSettings, type SidebarSectionId } from "@/hooks";
+import { useMcpServers } from "@/hooks";
+import { useUILayoutStore, useSidebarSettingsStore, type SidebarSectionId } from "@/stores";
 
 interface TokenInfo {
   input: number;
@@ -63,9 +64,9 @@ export function ChatSidebar({
   hasSession = false,
   isBusy = false,
 }: ChatSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { chatSidebarCollapsed: isCollapsed, toggleChatSidebar } = useUILayoutStore();
   const { data: mcpServers = [], isLoading: isMcpLoading } = useMcpServers();
-  const { settings } = useSidebarSettings();
+  const sections = useSidebarSettingsStore((state) => state.sections);
 
   // Extract the latest todos from todowrite tool calls
   const todos = useMemo(() => {
@@ -294,7 +295,7 @@ export function ChatSidebar({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsCollapsed(false)}
+            onClick={toggleChatSidebar}
             className="h-6 w-6"
             title="Expand sidebar"
           >
@@ -322,7 +323,7 @@ export function ChatSidebar({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsCollapsed(true)}
+            onClick={toggleChatSidebar}
             className="h-6 w-6"
             title="Collapse sidebar"
           >
@@ -332,7 +333,7 @@ export function ChatSidebar({
       </div>
 
       {/* Render sections based on settings */}
-      {settings.sections
+      {sections
         .filter((section) => section.enabled)
         .map((section) => renderSection(section.id))}
     </div>

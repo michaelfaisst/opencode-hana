@@ -4,9 +4,9 @@ import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { StreamingIndicator } from "./streaming-indicator";
 import { ChatSidebar } from "./chat-sidebar";
-import { type SelectedModel } from "@/components/common";
 import { Button } from "@/components/ui/button";
-import { useProviders, useSettings, type ImageAttachment, type Command } from "@/hooks";
+import { useProviders, type ImageAttachment, type Command } from "@/hooks";
+import { useAppSettingsStore } from "@/stores";
 
 interface Part {
   type: string;
@@ -72,8 +72,6 @@ interface ChatContainerProps {
   onSendMessage: (message: string, images?: ImageAttachment[]) => void;
   onAbort?: () => void;
   onCommand?: (command: Command) => void;
-  selectedModel?: SelectedModel;
-  onModelChange?: (model: SelectedModel) => void;
   /** Auto-focus the input field */
   autoFocusInput?: boolean;
 }
@@ -88,12 +86,10 @@ export function ChatContainer({
   onSendMessage,
   onAbort,
   onCommand,
-  selectedModel,
-  onModelChange,
   autoFocusInput,
 }: ChatContainerProps) {
   const { data: providersData } = useProviders();
-  const { settings, setAgentMode } = useSettings();
+  const { selectedModel, agentMode, toggleAgentMode } = useAppSettingsStore();
   
   // Message queue for when agent is busy
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
@@ -153,11 +149,6 @@ export function ChatContainer({
       onSendMessage(text, images);
     }
   }, [isBusy, isSending, onSendMessage]);
-
-  // Toggle mode handler
-  const handleToggleMode = useCallback(() => {
-    setAgentMode(settings.agentMode === "plan" ? "build" : "plan");
-  }, [settings.agentMode, setAgentMode]);
 
   // Remove a queued message
   const removeFromQueue = useCallback((id: string) => {
@@ -220,12 +211,10 @@ export function ChatContainer({
           <MessageInput
             onSendMessage={handleSendMessage}
             onAbort={onAbort}
-            onToggleMode={handleToggleMode}
+            onToggleMode={toggleAgentMode}
             onCommand={onCommand}
             isBusy={isBusy}
-            agentMode={settings.agentMode}
-            selectedModel={selectedModel}
-            onModelChange={onModelChange}
+            agentMode={agentMode}
             autoFocus={autoFocusInput}
           />
         </div>

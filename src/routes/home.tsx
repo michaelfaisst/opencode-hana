@@ -4,7 +4,6 @@ import { MessageSquare, Plus } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { ChatContainer, SessionsSidebar, RenameSessionDialog, McpServersDialog } from "@/components/chat";
 import { CreateSessionDialog } from "@/components/sessions";
-import { type SelectedModel } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import {
   useSession,
@@ -16,20 +15,18 @@ import {
   useSendMessage,
   useAbortSession,
   useProviders,
-  useSettings,
   useRevertSession,
   useUnrevertSession,
   useCompactSession,
   useSessionCommand,
   useCopySession,
-  useShareSession,
   useExportSession,
   SessionNotFoundError,
   type ImageAttachment,
   type Command,
-  getWebSessionInfo,
 } from "@/hooks";
 import { useSessionStatusFromContext } from "@/providers";
+import { useSessionStore, useAppSettingsStore } from "@/stores";
 import type { Session } from "@opencode-ai/sdk/client";
 
 // Extend SDK Session type with optional timestamp fields
@@ -42,10 +39,15 @@ export function HomePage() {
   const { id: urlSessionId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: providersData } = useProviders();
-  const { settings } = useSettings();
-  const [selectedModel, setSelectedModel] = useState<SelectedModel | undefined>(
-    undefined
-  );
+
+  // Zustand stores
+  const { setSession } = useSessionStore();
+  const {
+    defaultModel,
+    selectedModel,
+    setSelectedModel,
+    replaceSessionOnNew,
+  } = useAppSettingsStore();
 
   // Fetch all sessions
   const { data: sessions = [], isLoading: isLoadingSessions } = useSessions();
@@ -84,18 +86,61 @@ export function HomePage() {
     }
   }, [urlSessionId, sortedSessions, isLoadingSessions, navigate]);
 
+  // Session data for active session
+  const {
+    data: session,
+    isLoading: isLoadingSession,
+    error: sessionError,
+  } = useSession(activeSessionId || "");
+  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(
+    activeSessionId || ""
+  );
+  const sendMessage = useSendMessage();
+  const abortSession = useAbortSession();
+  const { isBusy: isBusyFromSSE, isRetrying, status } = useSessionStatusFromContext(
+    activeSessionId || ""
+  );
+
+  // Update the session store when session changes
+  useEffect(() => {
+    if (activeSessionId && session) {
+      setSession(activeSessionId, session.directory);
+    } else if (!activeSessionId) {
+      setSession(null, null);
+    }
+  }, [activeSessionId, session, setSession]);
+
+  // Determine busy state:
+  // Trust the SSE status - show indicator from session start until session.idle event
+  const isBusy = isBusyFromSSE;
+
+  // Command hooks
+  const revertSession = useRevertSession();
+  const unrevertSession = useUnrevertSession();
+  const compactSession = useCompactSession();
+  const sessionCommand = useSessionCommand();
+  const copySession = useCopySession();
+  const exportSession = useExportSession();
+
+  // Handle session not found - navigate to root to auto-select another
+  useEffect(() => {
+    if (sessionError instanceof SessionNotFoundError) {
+      navigate("/", { replace: true });
+    }
+  }, [sessionError, navigate]);
+
   // Set the default model from settings or first available provider/model
   useEffect(() => {
     if (selectedModel || !providersData?.providers) return;
 
     // First, try to use the default model from settings
-    if (settings.defaultModel) {
+    if (defaultModel) {
       // Verify the model still exists in providers
       const provider = providersData.providers.find(
-        (p) => p.id === settings.defaultModel!.providerID
+        (p) => p.id === defaultModel.providerID
       );
-      if (provider?.models?.[settings.defaultModel.modelID]) {
-        setSelectedModel(settings.defaultModel);
+      if (provider?.models?.[defaultModel.modelID]) {
+        setSelectedModel(defaultModel);
         return;
       }
     }
@@ -112,51 +157,18 @@ export function HomePage() {
         break;
       }
     }
-  }, [providersData, selectedModel, settings.defaultModel]);
-
-  // Session data for active session
-  const {
-    data: session,
-    isLoading: isLoadingSession,
-    error: sessionError,
-  } = useSession(activeSessionId || "");
-  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(
-    activeSessionId || ""
-  );
-  const sendMessage = useSendMessage();
-  const abortSession = useAbortSession();
-  const { isBusy: isBusyFromSSE, isRetrying, status } = useSessionStatusFromContext(
-    activeSessionId || ""
-  );
-
-  // Determine busy state:
-  // Trust the SSE status - show indicator from session start until session.idle event
-  const isBusy = isBusyFromSSE;
-
-  // Command hooks
-  const revertSession = useRevertSession();
-  const unrevertSession = useUnrevertSession();
-  const compactSession = useCompactSession();
-  const sessionCommand = useSessionCommand();
-  const copySession = useCopySession();
-  const shareSession = useShareSession();
-  const exportSession = useExportSession();
-
-  // Handle session not found - navigate to root to auto-select another
-  useEffect(() => {
-    if (sessionError instanceof SessionNotFoundError) {
-      navigate("/", { replace: true });
-    }
-  }, [sessionError, navigate]);
+  }, [providersData, selectedModel, defaultModel, setSelectedModel]);
 
   const handleSendMessage = async (text: string, images?: ImageAttachment[]) => {
     if (!activeSessionId || !selectedModel) return;
+    // Get the current agentMode from the store at call time to ensure freshness
+    const currentAgentMode = useAppSettingsStore.getState().agentMode;
     await sendMessage.mutateAsync({
       sessionId: activeSessionId,
       text,
       images,
       model: selectedModel,
-      mode: settings.agentMode,
+      mode: currentAgentMode,
     });
   };
 
@@ -190,8 +202,7 @@ export function HomePage() {
   const handleCommand = useCallback(async (command: Command) => {
     if (!activeSessionId) return;
 
-    const sessionInfo = getWebSessionInfo(activeSessionId);
-    const directory = sessionInfo?.directory;
+    const directory = session?.directory;
 
     try {
       switch (command.name) {
@@ -205,13 +216,13 @@ export function HomePage() {
           const currentTitle = session?.title;
           
           // If replaceSessionOnNew is enabled, delete the current session first
-          if (settings.replaceSessionOnNew) {
+          if (replaceSessionOnNew) {
             await deleteSession.mutateAsync(activeSessionId);
           }
           
           // Create new session with same directory (and title if replacing)
           const newSession = await createSession.mutateAsync({ 
-            title: settings.replaceSessionOnNew ? currentTitle : undefined,
+            title: replaceSessionOnNew ? currentTitle : undefined,
             directory 
           });
           if (newSession?.id) {
@@ -295,7 +306,7 @@ export function HomePage() {
     messages,
     selectedModel,
     session,
-    settings.replaceSessionOnNew,
+    replaceSessionOnNew,
     navigate,
     createSession,
     deleteSession,
@@ -304,7 +315,6 @@ export function HomePage() {
     compactSession,
     sessionCommand,
     copySession,
-    shareSession,
     exportSession,
   ]);
 
@@ -348,8 +358,6 @@ export function HomePage() {
               onSendMessage={handleSendMessage}
               onAbort={handleAbort}
               onCommand={handleCommand}
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
               autoFocusInput={messages.length === 0}
             />
           )}

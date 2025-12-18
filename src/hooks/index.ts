@@ -3,7 +3,6 @@ export { useMessages, useSendMessage, useAbortSession, type ImageAttachment } fr
 export { useProviders } from "./use-providers";
 export { useProjects, useCurrentProject, getProjectName, type Project } from "./use-projects";
 export { useEvents } from "./use-events";
-export { useSettings, type SelectedModel, type AgentMode, type AppSettings } from "./use-settings";
 export { useFileSearch } from "./use-file-search";
 export { useInputHistory } from "./use-input-history";
 export { useMcpServers, useConnectMcpServer, useDisconnectMcpServer, type McpServer, type McpStatus } from "./use-mcp-servers";
@@ -19,10 +18,7 @@ export {
   useExportSession,
   type Command,
 } from "./use-commands";
-export {
-  useSidebarSettings,
-  DEFAULT_SECTIONS,
-  type SidebarSection,
-  type SidebarSectionId,
-  type SidebarSettings,
-} from "./use-sidebar-settings";
+
+// Re-export types from stores for backwards compatibility
+export type { SelectedModel, AgentMode } from "@/stores";
+export type { SidebarSection, SidebarSectionId } from "@/stores";

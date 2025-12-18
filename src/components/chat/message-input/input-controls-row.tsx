@@ -2,7 +2,7 @@ import { Image as ImageIcon, Lightbulb, Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModelSelector, type SelectedModel } from "@/components/common";
 import { cn } from "@/lib/utils";
-import type { AgentMode } from "@/hooks/use-settings";
+import type { AgentMode } from "@/stores";
 
 interface InputControlsRowProps {
   agentMode: AgentMode;
@@ -26,11 +26,10 @@ export function InputControlsRow({
         {onToggleMode && (
           <Button
             variant="outline"
-            size="sm"
             onClick={onToggleMode}
             disabled={isBusy}
             className={cn(
-              "gap-1.5 text-xs",
+              "gap-1.5 text-xs w-20",
               agentMode === "plan" ? "border-amber-500/50" : "border-blue-500/50"
             )}
             title={`Current mode: ${agentMode}. Press Tab to switch.`}

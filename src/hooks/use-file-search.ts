@@ -3,10 +3,12 @@ import { opencodeClient } from "@/lib/opencode";
 
 interface UseFileSearchOptions {
   debounceMs?: number;
+  /** The directory to search in. If not provided, uses the server's default. */
+  directory?: string;
 }
 
 export function useFileSearch(options: UseFileSearchOptions = {}) {
-  const { debounceMs = 150 } = options;
+  const { debounceMs = 150, directory } = options;
   
   const [files, setFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +59,7 @@ export function useFileSearch(options: UseFileSearchOptions = {}) {
 
         try {
           const response = await opencodeClient.find.files({
-            query: { query: query || "" },
+            query: { query: query || "", directory },
           });
 
           if (response.data) {
@@ -77,7 +79,7 @@ export function useFileSearch(options: UseFileSearchOptions = {}) {
         }
       }, debounceMs);
     },
-    [debounceMs, files.length]
+    [debounceMs, directory, files.length]
   );
 
   const clearFiles = useCallback(() => {

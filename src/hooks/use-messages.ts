@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useOpencodeClient } from "@/providers";
 import { QUERY_KEYS } from "@/lib/constants";
 import { getWebSessionInfo } from "./use-sessions";
-import type { AgentMode } from "./use-settings";
+import type { AgentMode } from "@/stores";
 
 export function useMessages(sessionId: string) {
   const client = useOpencodeClient();

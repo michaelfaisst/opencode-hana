@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, type ReactNode } from "react";
 import { useEvents } from "@/hooks/use-events";
 import type { SessionStatus } from "@opencode-ai/sdk/client";

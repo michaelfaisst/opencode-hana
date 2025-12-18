@@ -10,9 +10,8 @@ import { InputControlsRow } from "./message-input/input-controls-row";
 import { useFileSearch } from "@/hooks/use-file-search";
 import { useInputHistory } from "@/hooks/use-input-history";
 import { filterCommands, type Command } from "@/hooks/use-commands";
-import type { SelectedModel } from "@/components/common";
+import { useSessionStore, useAppSettingsStore, type AgentMode } from "@/stores";
 import type { ImageAttachment } from "@/hooks/use-messages";
-import type { AgentMode } from "@/hooks/use-settings";
 
 interface MessageInputProps {
   onSendMessage: (message: string, images?: ImageAttachment[]) => void;
@@ -23,8 +22,6 @@ interface MessageInputProps {
   isBusy?: boolean;
   placeholder?: string;
   agentMode?: AgentMode;
-  selectedModel?: SelectedModel;
-  onModelChange?: (model: SelectedModel) => void;
   /** Auto-focus the input field on mount */
   autoFocus?: boolean;
 }
@@ -49,8 +46,6 @@ export const MessageInput = memo(function MessageInput({
   isBusy,
   placeholder = "Type a message... (@ files, / commands)",
   agentMode = "build",
-  selectedModel,
-  onModelChange,
   autoFocus = false,
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
@@ -71,12 +66,16 @@ export const MessageInput = memo(function MessageInput({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Get the session's directory from the store
+  const directory = useSessionStore((state) => state.directory);
+  const { selectedModel, setSelectedModel } = useAppSettingsStore();
+
   const {
     files,
     isLoading: isSearching,
     searchFiles,
     clearFiles,
-  } = useFileSearch();
+  } = useFileSearch({ directory: directory ?? undefined });
 
   // Input history for arrow key navigation
   const {
@@ -508,9 +507,9 @@ export const MessageInput = memo(function MessageInput({
       <InputControlsRow
         agentMode={agentMode}
         isBusy={isBusy ?? false}
-        selectedModel={selectedModel}
+        selectedModel={selectedModel ?? undefined}
         onToggleMode={onToggleMode}
-        onModelChange={onModelChange}
+        onModelChange={setSelectedModel}
       />
     </div>
   );

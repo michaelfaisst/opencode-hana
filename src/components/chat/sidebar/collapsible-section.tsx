@@ -1,8 +1,7 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const STORAGE_PREFIX = "sidebar-section-";
+import { useUILayoutStore } from "@/stores";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -27,25 +26,24 @@ export function CollapsibleSection({
   headerClassName,
   contentClassName,
 }: CollapsibleSectionProps) {
-  const [isOpen, setIsOpen] = useState(() => {
-    if (storageKey) {
-      const stored = localStorage.getItem(STORAGE_PREFIX + storageKey);
-      if (stored !== null) {
-        return stored === "true";
-      }
-    }
-    return defaultOpen;
-  });
+  const { collapsedSections, setSectionCollapsed } = useUILayoutStore();
+  
+  // Local state for sections without storageKey
+  const [localOpen, setLocalOpen] = useState(defaultOpen);
+
+  // Determine if section is open
+  // If we have a storage key, check the store; otherwise use local state
+  const isOpen = storageKey
+    ? !(collapsedSections[storageKey] ?? !defaultOpen)
+    : localOpen;
 
   const handleToggle = useCallback(() => {
-    setIsOpen((prev) => {
-      const newValue = !prev;
-      if (storageKey) {
-        localStorage.setItem(STORAGE_PREFIX + storageKey, String(newValue));
-      }
-      return newValue;
-    });
-  }, [storageKey]);
+    if (storageKey) {
+      setSectionCollapsed(storageKey, isOpen);
+    } else {
+      setLocalOpen((prev) => !prev);
+    }
+  }, [storageKey, isOpen, setSectionCollapsed]);
 
   return (
     <div className={cn("border-b border-border", className)}>

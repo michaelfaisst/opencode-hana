@@ -13,20 +13,20 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
-  useSidebarSettings,
+  useSidebarSettingsStore,
   DEFAULT_SECTIONS,
   type SidebarSection,
-} from "@/hooks/use-sidebar-settings";
+} from "@/stores";
 
 interface SidebarSettingsDialogProps {
   trigger?: React.ReactElement;
 }
 
 export function SidebarSettingsDialog({ trigger }: SidebarSettingsDialogProps) {
-  const { settings, updateSections } = useSidebarSettings();
-  const [localSections, setLocalSections] = useState<SidebarSection[]>(
-    settings.sections
-  );
+  const sections = useSidebarSettingsStore((state) => state.sections);
+  const updateSections = useSidebarSettingsStore((state) => state.updateSections);
+
+  const [localSections, setLocalSections] = useState<SidebarSection[]>(sections);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
@@ -35,11 +35,11 @@ export function SidebarSettingsDialog({ trigger }: SidebarSettingsDialogProps) {
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       if (isOpen) {
-        setLocalSections(settings.sections);
+        setLocalSections(sections);
       }
       setOpen(isOpen);
     },
-    [settings.sections]
+    [sections]
   );
 
   const handleToggle = useCallback((sectionId: string) => {

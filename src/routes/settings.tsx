@@ -23,7 +23,8 @@ import {
   ComboboxEmpty,
   ComboboxSeparator,
 } from "@/components/ui/combobox";
-import { useSettings, useProviders } from "@/hooks";
+import { useProviders } from "@/hooks";
+import { useAppSettingsStore } from "@/stores";
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, ArrowLeft, GithubIcon } from "lucide-react";
@@ -31,7 +32,12 @@ import { X, ArrowLeft, GithubIcon } from "lucide-react";
 export function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { settings, setDefaultModel, setReplaceSessionOnNew } = useSettings();
+  const {
+    defaultModel,
+    replaceSessionOnNew,
+    setDefaultModel,
+    setReplaceSessionOnNew,
+  } = useAppSettingsStore();
   const { data: providersData, isLoading: isLoadingProviders } = useProviders();
   const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "http://localhost:4096";
   const [inputValue, setInputValue] = useState("");
@@ -97,17 +103,17 @@ export function SettingsPage() {
     return Object.entries(groups);
   }, [allModels, inputValue]);
 
-  const currentModelValue = settings.defaultModel
-    ? `${settings.defaultModel.providerID}::${settings.defaultModel.modelID}`
+  const currentModelValue = defaultModel
+    ? `${defaultModel.providerID}::${defaultModel.modelID}`
     : "";
 
   const currentModelLabel = useMemo(() => {
-    if (!settings.defaultModel) {
+    if (!defaultModel) {
       return "";
     }
     const model = allModels.find((m) => m.value === currentModelValue);
     return model ? model.label : currentModelValue;
-  }, [settings.defaultModel, allModels, currentModelValue]);
+  }, [defaultModel, allModels, currentModelValue]);
 
   // Convert value to label for display in the input
   const itemToStringLabel = useCallback(
@@ -223,7 +229,7 @@ export function SettingsPage() {
                     </ComboboxList>
                   </ComboboxContent>
                 </Combobox>
-                {settings.defaultModel && (
+                {defaultModel && (
                   <Button
                     variant="outline"
                     size="icon"
@@ -235,7 +241,7 @@ export function SettingsPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {settings.defaultModel 
+                {defaultModel 
                   ? "This model will be selected by default when starting new chats."
                   : "When not set, the first available model will be used."}
               </p>
@@ -286,7 +292,7 @@ export function SettingsPage() {
               </div>
               <Switch
                 id="replace-session"
-                checked={settings.replaceSessionOnNew}
+                checked={replaceSessionOnNew}
                 onCheckedChange={setReplaceSessionOnNew}
               />
             </div>

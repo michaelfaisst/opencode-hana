@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   PanelLeftClose,
@@ -20,9 +20,9 @@ import { getProjectName, getTimeAgoShort } from "@/lib/format";
 import { useSessions, useCreateSession, useDeleteSession } from "@/hooks";
 import { CreateSessionDialog } from "@/components/sessions";
 import { useEventsContext } from "@/providers/events-provider";
+import { useUILayoutStore } from "@/stores";
 import type { Session } from "@opencode-ai/sdk/client";
-
-const SIDEBAR_COLLAPSED_KEY = "opencode-sessions-sidebar-collapsed";
+import { useState } from "react";
 
 // Extend SDK Session type with optional timestamp fields
 type SessionWithTimestamps = Session & {
@@ -47,27 +47,9 @@ export function SessionsSidebar(_props: SessionsSidebarProps) {
   // State for create session dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  // Load collapsed state from localStorage
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  // Persist collapsed state
-  useEffect(() => {
-    try {
-      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [isCollapsed]);
-
-  const toggleCollapsed = useCallback(() => {
-    setIsCollapsed((prev) => !prev);
-  }, []);
+  // Use Zustand store for collapsed state
+  const { sessionsSidebarCollapsed: isCollapsed, toggleSessionsSidebar } =
+    useUILayoutStore();
 
   // Sort sessions by updatedAt descending
   const sortedSessions = useMemo(() => {
@@ -170,7 +152,7 @@ export function SessionsSidebar(_props: SessionsSidebarProps) {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={toggleCollapsed}
+            onClick={toggleSessionsSidebar}
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? (
