@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProviders } from "@/providers";
 import { RootLayout } from "@/components/layout";
 import { HomePage, SettingsPage } from "@/routes";
+import { Toaster } from "@/components/ui/sonner";
 
 export function App() {
   return (
@@ -17,6 +18,7 @@ export function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      <Toaster position="top-center" />
     </AppProviders>
   );
 }

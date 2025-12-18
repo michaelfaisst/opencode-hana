@@ -24,10 +24,15 @@ import {
   ComboboxSeparator,
 } from "@/components/ui/combobox";
 import { useProviders } from "@/hooks";
-import { useAppSettingsStore } from "@/stores";
-import { useMemo, useState, useCallback } from "react";
+import { useAppSettingsStore, useNotificationStore, NOTIFICATION_SOUNDS } from "@/stores";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, ArrowLeft, GithubIcon } from "lucide-react";
+import { X, ArrowLeft, Github, Volume2, Bell } from "lucide-react";
+import { 
+  requestNotificationPermission, 
+  getBrowserNotificationPermission,
+  previewSound,
+} from "@/lib/notifications";
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -38,9 +43,32 @@ export function SettingsPage() {
     setDefaultModel,
     setReplaceSessionOnNew,
   } = useAppSettingsStore();
+  const {
+    notificationsEnabled,
+    browserNotificationsEnabled,
+    soundEnabled,
+    selectedSound,
+    browserPermission,
+    setNotificationsEnabled,
+    setBrowserNotificationsEnabled,
+    setSoundEnabled,
+    setSelectedSound,
+    setBrowserPermission,
+  } = useNotificationStore();
   const { data: providersData, isLoading: isLoadingProviders } = useProviders();
   const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "http://localhost:4096";
   const [inputValue, setInputValue] = useState("");
+
+  // Sync browser permission state on mount
+  useEffect(() => {
+    setBrowserPermission(getBrowserNotificationPermission());
+  }, [setBrowserPermission]);
+
+  // Handle requesting browser notification permission
+  const handleRequestPermission = useCallback(async () => {
+    const permission = await requestNotificationPermission();
+    setBrowserPermission(permission);
+  }, [setBrowserPermission]);
 
   // Build a flat list of all models for the selector
   const allModels = useMemo(() => {
@@ -176,7 +204,7 @@ export function SettingsPage() {
                 id="server-url"
                 value={serverUrl}
                 disabled
-                className="font-mono text-sm"
+                className="max-w-sm font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
                 Set via VITE_OPENCODE_SERVER_URL environment variable
@@ -195,7 +223,7 @@ export function SettingsPage() {
           <CardContent>
             <div className="space-y-2">
               <Label htmlFor="default-model">Model</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 max-w-sm">
                 <Combobox
                   value={currentModelValue}
                   onValueChange={handleModelChange}
@@ -260,7 +288,7 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
               <Select value={theme} onValueChange={(value) => value && setTheme(value as "light" | "dark" | "system")}>
-                <SelectTrigger id="theme">
+                <SelectTrigger id="theme" className="max-w-sm">
                   <SelectValue>
                     {theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}
                   </SelectValue>
@@ -283,8 +311,8 @@ export function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className="flex items-center gap-4 max-w-lg">
+              <div className="flex-1 space-y-0.5">
                 <Label htmlFor="replace-session">Replace session on new</Label>
                 <p className="text-xs text-muted-foreground">
                   When enabled, creating a new session will delete the current one and create a fresh session with the same directory and title.
@@ -296,6 +324,118 @@ export function SettingsPage() {
                 onCheckedChange={setReplaceSessionOnNew}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Notifications
+            </CardTitle>
+            <CardDescription>
+              Get notified when the assistant finishes responding
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Master toggle */}
+            <div className="flex items-center gap-4 max-w-lg">
+              <div className="flex-1 space-y-0.5">
+                <Label htmlFor="notifications-enabled">Enable notifications</Label>
+                <p className="text-xs text-muted-foreground">
+                  Show notifications when assistant completes a response
+                </p>
+              </div>
+              <Switch
+                id="notifications-enabled"
+                checked={notificationsEnabled}
+                onCheckedChange={setNotificationsEnabled}
+              />
+            </div>
+
+            {notificationsEnabled && (
+              <>
+                {/* Browser notifications */}
+                <div className="flex items-center gap-4 max-w-lg">
+                  <div className="flex-1 space-y-0.5">
+                    <Label htmlFor="browser-notifications">Browser notifications</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {browserPermission === "granted" 
+                        ? "Show system notifications when tab is in background"
+                        : browserPermission === "denied"
+                        ? "Permission denied - enable in browser settings"
+                        : "Requires permission to show system notifications"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {browserPermission === "default" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRequestPermission}
+                      >
+                        Request Permission
+                      </Button>
+                    )}
+                    <Switch
+                      id="browser-notifications"
+                      checked={browserNotificationsEnabled && browserPermission === "granted"}
+                      onCheckedChange={setBrowserNotificationsEnabled}
+                      disabled={browserPermission !== "granted"}
+                    />
+                  </div>
+                </div>
+
+                {/* Sound notifications */}
+                <div className="flex items-center gap-4 max-w-lg">
+                  <div className="flex-1 space-y-0.5">
+                    <Label htmlFor="sound-enabled">Sound notifications</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Play a sound when assistant completes
+                    </p>
+                  </div>
+                  <Switch
+                    id="sound-enabled"
+                    checked={soundEnabled}
+                    onCheckedChange={setSoundEnabled}
+                  />
+                </div>
+
+                {/* Sound selector */}
+                {soundEnabled && (
+                  <div className="space-y-2">
+                    <Label>Notification sound</Label>
+                    <div className="flex gap-2 max-w-sm">
+                      <Select 
+                        value={selectedSound} 
+                        onValueChange={(value) => value && setSelectedSound(value as typeof selectedSound)}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue>
+                            {NOTIFICATION_SOUNDS.find((s) => s.id === selectedSound)?.label}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {NOTIFICATION_SOUNDS.map((sound) => (
+                            <SelectItem key={sound.id} value={sound.id}>
+                              {sound.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => previewSound(selectedSound)}
+                        title="Preview sound"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -318,7 +458,7 @@ export function SettingsPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-foreground hover:underline"
               >
-                <GithubIcon className="h-4 w-4" />
+                <Github className="h-4 w-4" />
                 View on GitHub
               </a>
             </div>

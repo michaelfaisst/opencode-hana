@@ -12,3 +12,9 @@ export {
   type SidebarSection,
   type SidebarSectionId,
 } from "./sidebar-settings-store";
+export {
+  useNotificationStore,
+  NOTIFICATION_SOUNDS,
+  type NotificationSound,
+  type NotificationSoundOption,
+} from "./notification-store";

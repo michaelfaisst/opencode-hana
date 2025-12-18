@@ -359,6 +359,7 @@ export function HomePage() {
               onAbort={handleAbort}
               onCommand={handleCommand}
               autoFocusInput={messages.length === 0}
+              sessionId={activeSessionId || undefined}
             />
           )}
         </div>

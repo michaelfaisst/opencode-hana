@@ -1,10 +1,10 @@
-import { useRef, useCallback, useState, useEffect } from "react";
-import { Virtuoso } from "react-virtuoso";
-import type { VirtuosoHandle } from "react-virtuoso";
-import { ArrowDown } from "lucide-react";
+import { useRef, useCallback, useState, useEffect, useMemo } from "react";
+import { ArrowDown, Loader2 } from "lucide-react";
 import { MessageItem } from "./message-item";
 import { Skeleton } from "@/components/common/loading-skeleton";
 import { Button } from "@/components/ui/button";
+
+const MESSAGES_PER_BATCH = 30;
 
 interface Part {
   type: string;
@@ -37,112 +37,123 @@ export function MessageList({
   isBusy,
   isRetrying,
 }: MessageListProps) {
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const atBottomRef = useRef(true);
-  const prevMessageCountRef = useRef(0);
   const wasBusyRef = useRef(false);
+  const hasInitialScrolled = useRef(false);
+  
+  // Pagination state
+  const [visibleCount, setVisibleCount] = useState(MESSAGES_PER_BATCH);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Keep atBottomRef in sync with state
-  useEffect(() => {
-    atBottomRef.current = atBottom;
-  }, [atBottom]);
+  // Calculate which messages to show (from the end)
+  const visibleMessages = useMemo(() => {
+    const startIndex = Math.max(0, messages.length - visibleCount);
+    return messages.slice(startIndex);
+  }, [messages, visibleCount]);
 
-  // Helper to scroll the container to the very bottom
-  const scrollToVeryBottom = useCallback(() => {
-    const scroller = containerRef.current?.querySelector('[data-virtuoso-scroller="true"]') as HTMLElement | null;
-    if (scroller) {
-      scroller.scrollTop = scroller.scrollHeight;
+  const hasMoreMessages = visibleCount < messages.length;
+
+  // Scroll to bottom function (instant for initial, smooth for user actions)
+  const scrollToBottom = useCallback((instant = false) => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({ 
+        top: container.scrollHeight, 
+        behavior: instant ? "instant" : "smooth" 
+      });
     }
   }, []);
 
-  // Scroll to bottom when:
-  // 1. We just became busy (user sent a message)
-  // 2. A new message was added while we were at bottom
-  // 3. Just finished streaming (busy -> not busy) - final scroll to catch last content
+  // Initial scroll to bottom when messages first load
   useEffect(() => {
-    const messageCount = messages.length;
-    const prevMessageCount = prevMessageCountRef.current;
-    const wasBusy = wasBusyRef.current;
-    const isNowBusy = isBusy || isRetrying;
-    
-    // Update refs for next render
-    prevMessageCountRef.current = messageCount;
-    wasBusyRef.current = isNowBusy ?? false;
-    
-    // Case 1: Just became busy (user sent a message) - always scroll
-    if (isNowBusy && !wasBusy) {
-      virtuosoRef.current?.scrollToIndex({
-        index: messages.length - 1,
-        align: "end",
-        behavior: "auto",
+    if (messages.length > 0 && !hasInitialScrolled.current) {
+      // Use requestAnimationFrame to ensure DOM has rendered
+      requestAnimationFrame(() => {
+        scrollToBottom(true); // Instant scroll for initial load
+        hasInitialScrolled.current = true;
       });
-      return;
     }
-    
-    // Case 2: Just finished streaming - do a final scroll after content settles
-    if (!isNowBusy && wasBusy && atBottomRef.current) {
-      // Use multiple delayed scrolls to ensure we catch the final rendered height
-      // Use direct DOM scroll to guarantee we reach the absolute bottom
-      scrollToVeryBottom();
-      setTimeout(scrollToVeryBottom, 100);
-      setTimeout(scrollToVeryBottom, 300);
-      return;
-    }
-    
-    // Case 3: New message added - scroll if we were at bottom
-    if (messageCount > prevMessageCount && atBottomRef.current) {
-      virtuosoRef.current?.scrollToIndex({
-        index: messages.length - 1,
-        align: "end",
-        behavior: "auto",
-      });
-      return;
-    }
-  }, [messages.length, isBusy, isRetrying]);
+  }, [messages.length, scrollToBottom]);
 
-  // Scroll during streaming when content updates and we're at bottom
-  // This handles the case where message content grows but count stays the same
-  // Use "auto" (instant) during streaming since smooth can't keep up with rapid updates
-  useEffect(() => {
-    if ((isBusy || isRetrying) && atBottomRef.current) {
-      virtuosoRef.current?.scrollToIndex({
-        index: messages.length - 1,
-        align: "end",
-        behavior: "auto",
-      });
-    }
-  }, [messages, isBusy, isRetrying]);
-
-  // Handle scroll to bottom button click
-  const scrollToBottom = useCallback(() => {
-    virtuosoRef.current?.scrollToIndex({
-      index: messages.length - 1,
-      align: "end",
-      behavior: "auto",
+  // Load more messages when sentinel becomes visible
+  const loadMoreMessages = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    
+    // Remember scroll position relative to content
+    const scrollHeightBefore = container.scrollHeight;
+    const scrollTopBefore = container.scrollTop;
+    
+    // Load more messages
+    setVisibleCount(prev => Math.min(prev + MESSAGES_PER_BATCH, messages.length));
+    
+    // After DOM update, restore scroll position
+    requestAnimationFrame(() => {
+      const scrollHeightAfter = container.scrollHeight;
+      const heightDiff = scrollHeightAfter - scrollHeightBefore;
+      container.scrollTop = scrollTopBefore + heightDiff;
+      setIsLoadingMore(false);
     });
-  }, [messages.length]);
+  }, [messages.length, isLoadingMore]);
 
-  // followOutput callback - follow when at bottom during streaming
-  // Use "auto" for instant scroll during streaming to keep up with content
-  const followOutput = useCallback(
-    (isAtBottom: boolean) => {
-      // Auto-scroll when user is at bottom
-      return isAtBottom ? "auto" : false;
-    },
-    []
-  );
+  // Intersection observer for loading more messages
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const container = scrollContainerRef.current;
+    if (!sentinel || !container || !hasMoreMessages) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore) {
+          loadMoreMessages();
+        }
+      },
+      { 
+        root: container,
+        rootMargin: "200px", // Trigger before sentinel is visible
+        threshold: 0
+      }
+    );
+    
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreMessages, isLoadingMore, loadMoreMessages]);
 
-  // Compute item key
-  const computeItemKey = useCallback((_index: number, item: Message) => {
-    return item.info.id;
+  // Track if user is at bottom
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const threshold = 100;
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+    atBottomRef.current = isAtBottom;
+    setAtBottom(isAtBottom);
   }, []);
 
-  // Render item content
-  const itemContent = useCallback((_index: number, item: Message) => {
-    return <MessageItem role={item.info.role} parts={item.parts} />;
-  }, []);
+  // Auto-scroll when new messages arrive (if at bottom)
+  useEffect(() => {
+    if (atBottomRef.current && messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages, scrollToBottom]);
+
+  // Scroll to bottom when becoming busy (user sent message)
+  useEffect(() => {
+    const isNowBusy = isBusy || isRetrying;
+    const wasBusy = wasBusyRef.current;
+    
+    // Just became busy - scroll to bottom
+    if (isNowBusy && !wasBusy) {
+      scrollToBottom();
+    }
+    
+    wasBusyRef.current = isNowBusy ?? false;
+  }, [isBusy, isRetrying, scrollToBottom]);
 
   if (isLoading) {
     return (
@@ -172,19 +183,34 @@ export function MessageList({
   }
 
   return (
-    <div ref={containerRef} className="relative flex-1 overflow-hidden">
-      <Virtuoso
-        ref={virtuosoRef}
-        data={messages}
-        atBottomStateChange={setAtBottom}
-        atBottomThreshold={200}
-        computeItemKey={computeItemKey}
-        itemContent={itemContent}
-        followOutput={followOutput}
-        initialTopMostItemIndex={messages.length - 1}
-        alignToBottom
-        className="absolute inset-0 custom-scrollbar"
-      />
+    <div className="relative flex-1 overflow-hidden">
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="absolute inset-0 overflow-y-auto custom-scrollbar"
+      >
+        {/* Sentinel for loading more messages */}
+        {hasMoreMessages && (
+          <div ref={sentinelRef} className="flex justify-center py-4">
+            {isLoadingMore ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Scroll up for more messages
+              </span>
+            )}
+          </div>
+        )}
+        
+        {/* Messages */}
+        {visibleMessages.map((message) => (
+          <MessageItem 
+            key={message.info.id}
+            role={message.info.role} 
+            parts={message.parts} 
+          />
+        ))}
+      </div>
 
       {/* Scroll to bottom button */}
       {!atBottom && (
@@ -192,7 +218,7 @@ export function MessageList({
           variant="secondary"
           size="icon"
           className="absolute bottom-4 right-4 h-8 w-8 rounded-full shadow-md z-10"
-          onClick={scrollToBottom}
+          onClick={() => scrollToBottom()}
         >
           <ArrowDown className="h-4 w-4" />
           <span className="sr-only">Scroll to bottom</span>

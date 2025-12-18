@@ -6,7 +6,7 @@ import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
 import { useProviders, type ImageAttachment, type Command } from "@/hooks";
 import { useAppSettingsStore } from "@/stores";
-import { cn } from "@/lib/utils";
+import { sendCompletionNotification } from "@/lib/notifications";
 
 interface Part {
   type: string;
@@ -74,6 +74,8 @@ interface ChatContainerProps {
   onCommand?: (command: Command) => void;
   /** Auto-focus the input field */
   autoFocusInput?: boolean;
+  /** Session ID for resetting scroll state on session change */
+  sessionId?: string;
 }
 
 export function ChatContainer({
@@ -87,6 +89,7 @@ export function ChatContainer({
   onAbort,
   onCommand,
   autoFocusInput,
+  sessionId,
 }: ChatContainerProps) {
   const { data: providersData } = useProviders();
   const { selectedModel, agentMode, toggleAgentMode } = useAppSettingsStore();
@@ -94,6 +97,7 @@ export function ChatContainer({
   // Message queue for when agent is busy
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
   const processingRef = useRef(false);
+  const wasBusyRef = useRef(false);
 
   // Get context limit for the selected model
   const contextLimit = useMemo(() => {
@@ -136,6 +140,18 @@ export function ChatContainer({
     }
   }, [isBusy, isSending, messageQueue, onSendMessage]);
 
+  // Send notification when assistant finishes responding
+  useEffect(() => {
+    const isCurrentlyBusy = isBusy || isRetrying;
+    
+    // Detect transition from busy to not busy
+    if (wasBusyRef.current && !isCurrentlyBusy) {
+      sendCompletionNotification();
+    }
+    
+    wasBusyRef.current = isCurrentlyBusy ?? false;
+  }, [isBusy, isRetrying]);
+
   // Handle sending message (queue if busy)
   const handleSendMessage = useCallback((text: string, images?: ImageAttachment[]) => {
     if (isBusy || isSending) {
@@ -160,37 +176,31 @@ export function ChatContainer({
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         <MessageList 
+          key={sessionId}
           messages={messages} 
           isLoading={isLoadingMessages}
           isBusy={isBusy}
           isRetrying={isRetrying}
         />
         
-        {/* Streaming indicator - outside Virtuoso so it's always visible */}
-        <div
-          className={cn(
-            "grid transition-all duration-200 ease-in-out overflow-hidden",
-            (isBusy || isRetrying) ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-          )}
-        >
-          <div className="min-h-0">
-            <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground border-t border-border bg-muted/30">
-              {isRetrying && retryStatus ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>
-                    Retry attempt {retryStatus.attempt}: {retryStatus.message}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Assistant is thinking...</span>
-                </>
-              )}
-            </div>
+        {/* Streaming indicator - shown instantly when busy */}
+        {(isBusy || isRetrying) && (
+          <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground border-t border-border bg-muted/30">
+            {isRetrying && retryStatus ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>
+                  Retry attempt {retryStatus.attempt}: {retryStatus.message}
+                </span>
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Assistant is thinking...</span>
+              </>
+            )}
           </div>
-        </div>
+        )}
         
         {/* Queued messages */}
         {messageQueue.length > 0 && (
