@@ -14,11 +14,7 @@ interface StreamingIndicatorProps {
   className?: string;
 }
 
-export function StreamingIndicator({
-  isBusy,
-  retryStatus,
-  className,
-}: StreamingIndicatorProps) {
+export function StreamingIndicator({ isBusy, retryStatus, className }: StreamingIndicatorProps) {
   if (retryStatus) {
     const nextRetryTime = new Date(retryStatus.next).toLocaleTimeString();
     return (
@@ -32,9 +28,7 @@ export function StreamingIndicator({
         <span>
           Retrying (attempt {retryStatus.attempt}): {retryStatus.message}
         </span>
-        <span className="text-xs text-muted-foreground">
-          Next attempt at {nextRetryTime}
-        </span>
+        <span className="text-xs text-muted-foreground">Next attempt at {nextRetryTime}</span>
       </div>
     );
   }

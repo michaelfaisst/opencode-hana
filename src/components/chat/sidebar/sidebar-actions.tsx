@@ -4,11 +4,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { CollapsibleSection } from "./collapsible-section";
 import type { SidebarActionsProps } from "./types";
 
-export function SidebarActions({
-  commands,
-  onCommand,
-  isCommandDisabled,
-}: SidebarActionsProps) {
+export function SidebarActions({ commands, onCommand, isCommandDisabled }: SidebarActionsProps) {
   return (
     <CollapsibleSection
       title="Actions"
@@ -39,9 +35,7 @@ export function SidebarActions({
               />
               <TooltipContent>
                 {command.description}
-                {command.shortcut && (
-                  <span className="ml-1 opacity-70">({command.shortcut})</span>
-                )}
+                {command.shortcut && <span className="ml-1 opacity-70">({command.shortcut})</span>}
               </TooltipContent>
             </Tooltip>
           );

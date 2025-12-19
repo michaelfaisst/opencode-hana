@@ -13,11 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  useSidebarSettingsStore,
-  DEFAULT_SECTIONS,
-  type SidebarSection,
-} from "@/stores";
+import { useSidebarSettingsStore, DEFAULT_SECTIONS, type SidebarSection } from "@/stores";
 
 interface SidebarSettingsDialogProps {
   trigger?: React.ReactElement;
@@ -46,24 +42,19 @@ export function SidebarSettingsDialog({ trigger }: SidebarSettingsDialogProps) {
   const handleToggle = useCallback((sectionId: string) => {
     setLocalSections((prev) =>
       prev.map((section) =>
-        section.id === sectionId
-          ? { ...section, enabled: !section.enabled }
-          : section
+        section.id === sectionId ? { ...section, enabled: !section.enabled } : section
       )
     );
   }, []);
 
-  const handleDragStart = useCallback(
-    (e: React.DragEvent, index: number) => {
-      setDraggedIndex(index);
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", index.toString());
-      // Set drag image
-      const element = e.currentTarget as HTMLElement;
-      element.classList.add("opacity-50");
-    },
-    []
-  );
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+    // Set drag image
+    const element = e.currentTarget as HTMLElement;
+    element.classList.add("opacity-50");
+  }, []);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     const element = e.currentTarget as HTMLElement;
@@ -167,7 +158,9 @@ export function SidebarSettingsDialog({ trigger }: SidebarSettingsDialogProps) {
                 className={cn(
                   "flex items-center gap-3 p-2 rounded-sm border border-transparent transition-colors",
                   "hover:bg-accent/50 cursor-grab active:cursor-grabbing",
-                  dragOverIndex === index && draggedIndex !== index && "border-primary bg-primary/10",
+                  dragOverIndex === index &&
+                    draggedIndex !== index &&
+                    "border-primary bg-primary/10",
                   draggedIndex === index && "opacity-50"
                 )}
               >

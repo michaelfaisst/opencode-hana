@@ -66,7 +66,7 @@ export function useSessions() {
     queryFn: async () => {
       // Get all web sessions grouped by directory
       const webSessions = getWebSessions();
-      
+
       if (webSessions.size === 0) {
         return [];
       }
@@ -105,7 +105,7 @@ export function useSessions() {
 
 export class SessionNotFoundError extends Error {
   sessionId: string;
-  
+
   constructor(sessionId: string) {
     super(`Session not found: ${sessionId}`);
     this.name = "SessionNotFoundError";

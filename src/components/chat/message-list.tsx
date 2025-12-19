@@ -32,12 +32,7 @@ interface MessageListProps {
   isRetrying?: boolean;
 }
 
-export function MessageList({ 
-  messages, 
-  isLoading, 
-  isBusy,
-  isRetrying,
-}: MessageListProps) {
+export function MessageList({ messages, isLoading, isBusy, isRetrying }: MessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -47,7 +42,7 @@ export function MessageList({
   const lastScrollTopRef = useRef(0);
   const isUserScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   // Pagination state
   const [visibleCount, setVisibleCount] = useState(MESSAGES_PER_BATCH);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -71,9 +66,9 @@ export function MessageList({
   const scrollToBottom = useCallback((instant = false) => {
     const container = scrollContainerRef.current;
     if (container) {
-      container.scrollTo({ 
-        top: container.scrollHeight, 
-        behavior: instant ? "instant" : "smooth" 
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: instant ? "instant" : "smooth",
       });
     }
   }, []);
@@ -92,16 +87,16 @@ export function MessageList({
   const loadMoreMessages = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container || isLoadingMore) return;
-    
+
     setIsLoadingMore(true);
-    
+
     // Remember scroll position relative to content
     const scrollHeightBefore = container.scrollHeight;
     const scrollTopBefore = container.scrollTop;
-    
+
     // Load more messages
-    setVisibleCount(prev => Math.min(prev + MESSAGES_PER_BATCH, messages.length));
-    
+    setVisibleCount((prev) => Math.min(prev + MESSAGES_PER_BATCH, messages.length));
+
     // After DOM update, restore scroll position
     requestAnimationFrame(() => {
       const scrollHeightAfter = container.scrollHeight;
@@ -116,20 +111,20 @@ export function MessageList({
     const sentinel = sentinelRef.current;
     const container = scrollContainerRef.current;
     if (!sentinel || !container || !hasMoreMessages) return;
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !isLoadingMore) {
           loadMoreMessages();
         }
       },
-      { 
+      {
         root: container,
         rootMargin: "200px",
-        threshold: 0
+        threshold: 0,
       }
     );
-    
+
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [hasMoreMessages, isLoadingMore, loadMoreMessages]);
@@ -138,10 +133,10 @@ export function MessageList({
   const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    
+
     const currentScrollTop = container.scrollTop;
     const atBottom = isAtBottom();
-    
+
     // Detect if user scrolled up (manual scroll away from bottom)
     if (currentScrollTop < lastScrollTopRef.current && !atBottom) {
       // User scrolled up - disable auto-scroll
@@ -151,9 +146,9 @@ export function MessageList({
       // User scrolled back to bottom - re-enable auto-scroll
       shouldAutoScrollRef.current = true;
     }
-    
+
     lastScrollTopRef.current = currentScrollTop;
-    
+
     // Debounce the button visibility update to prevent flickering
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
@@ -185,13 +180,13 @@ export function MessageList({
   useEffect(() => {
     const isNowBusy = isBusy || isRetrying;
     const wasBusy = wasBusyRef.current;
-    
+
     // Just became busy - force scroll to bottom and enable auto-scroll
     if (isNowBusy && !wasBusy) {
       shouldAutoScrollRef.current = true;
       scrollToBottom(true);
     }
-    
+
     wasBusyRef.current = isNowBusy ?? false;
   }, [isBusy, isRetrying, scrollToBottom]);
 
@@ -230,7 +225,7 @@ export function MessageList({
 
   return (
     <div className="relative flex-1 overflow-hidden">
-      <div 
+      <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
         className="absolute inset-0 overflow-y-auto custom-scrollbar"
@@ -241,20 +236,14 @@ export function MessageList({
             {isLoadingMore ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
-              <span className="text-xs text-muted-foreground">
-                Scroll up for more messages
-              </span>
+              <span className="text-xs text-muted-foreground">Scroll up for more messages</span>
             )}
           </div>
         )}
-        
+
         {/* Messages */}
         {visibleMessages.map((message) => (
-          <MessageItem 
-            key={message.info.id}
-            role={message.info.role} 
-            parts={message.parts} 
-          />
+          <MessageItem key={message.info.id} role={message.info.role} parts={message.parts} />
         ))}
       </div>
 

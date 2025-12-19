@@ -11,16 +11,8 @@ interface DiffViewerProps {
   className?: string;
 }
 
-export function DiffViewer({
-  oldString,
-  newString,
-  filePath,
-  className,
-}: DiffViewerProps) {
-  const diff = useMemo(
-    () => diffLines(oldString, newString),
-    [oldString, newString]
-  );
+export function DiffViewer({ oldString, newString, filePath, className }: DiffViewerProps) {
+  const diff = useMemo(() => diffLines(oldString, newString), [oldString, newString]);
   const language = useMemo(() => getLanguageFromPath(filePath), [filePath]);
 
   // Build side-by-side view data with proper pairing
@@ -109,14 +101,9 @@ export function DiffViewer({
                     row.left.type === "empty" && "bg-muted/30"
                   )}
                 >
-                  {row.left.type === "removed" && (
-                    <span className="text-red-500 mr-1">-</span>
-                  )}
+                  {row.left.type === "removed" && <span className="text-red-500 mr-1">-</span>}
                   {row.left.content && (
-                    <HighlightedLine
-                      code={row.left.content}
-                      language={language}
-                    />
+                    <HighlightedLine code={row.left.content} language={language} />
                   )}
                 </td>
 
@@ -138,14 +125,9 @@ export function DiffViewer({
                     row.right.type === "empty" && "bg-muted/30"
                   )}
                 >
-                  {row.right.type === "added" && (
-                    <span className="text-green-500 mr-1">+</span>
-                  )}
+                  {row.right.type === "added" && <span className="text-green-500 mr-1">+</span>}
                   {row.right.content && (
-                    <HighlightedLine
-                      code={row.right.content}
-                      language={language}
-                    />
+                    <HighlightedLine code={row.right.content} language={language} />
                   )}
                 </td>
               </tr>

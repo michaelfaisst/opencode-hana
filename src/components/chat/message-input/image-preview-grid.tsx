@@ -7,30 +7,19 @@ interface ImagePreviewGridProps {
   onImageClick: (image: ImageAttachment) => void;
 }
 
-export function ImagePreviewGrid({
-  images,
-  onRemove,
-  onImageClick,
-}: ImagePreviewGridProps) {
+export function ImagePreviewGrid({ images, onRemove, onImageClick }: ImagePreviewGridProps) {
   if (images.length === 0) return null;
 
   return (
     <div className="mb-3 flex flex-wrap gap-2">
       {images.map((image) => (
-        <div
-          key={image.id}
-          className="relative group rounded-md overflow-hidden border bg-muted"
-        >
+        <div key={image.id} className="relative group rounded-md overflow-hidden border bg-muted">
           <button
             type="button"
             onClick={() => onImageClick(image)}
             className="block cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
-            <img
-              src={image.dataUrl}
-              alt={image.file.name}
-              className="h-20 w-20 object-cover"
-            />
+            <img src={image.dataUrl} alt={image.file.name} className="h-20 w-20 object-cover" />
           </button>
           <button
             onClick={() => onRemove(image.id)}

@@ -18,6 +18,7 @@ A mobile-friendly web UI to interact with the OpenCode server.
 ## Prerequisites
 
 1. **OpenCode Server**: Make sure you have OpenCode running:
+
    ```bash
    opencode serve --port 4096
    ```

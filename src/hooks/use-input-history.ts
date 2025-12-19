@@ -27,9 +27,7 @@ interface UseInputHistoryReturn {
  * Allows navigating through previous inputs using arrow keys,
  * similar to terminal/shell history.
  */
-export function useInputHistory(
-  options: UseInputHistoryOptions = {}
-): UseInputHistoryReturn {
+export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputHistoryReturn {
   const { maxSize = MAX_HISTORY_SIZE } = options;
 
   // History stored with newest first (index 0 is most recent)

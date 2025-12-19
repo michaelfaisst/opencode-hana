@@ -39,14 +39,12 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
   // Check if this is an edit tool with valid diff data
   const isEditTool = tool === "edit";
   const editInput = state.input as EditInput | undefined;
-  const hasValidDiff =
-    isEditTool && editInput?.oldString && editInput?.newString;
+  const hasValidDiff = isEditTool && editInput?.oldString && editInput?.newString;
 
   // Check if this is a todowrite tool
   const isTodoWriteTool = tool === "todowrite";
   const todoInput = state.input as TodoInput | undefined;
-  const hasTodos =
-    isTodoWriteTool && todoInput?.todos && todoInput.todos.length > 0;
+  const hasTodos = isTodoWriteTool && todoInput?.todos && todoInput.todos.length > 0;
 
   // Check if this is a read tool
   const isReadTool = tool === "read";
@@ -66,9 +64,7 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
 
   const statusIcon = useMemo(() => {
     const icons = {
-      pending: (
-        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-      ),
+      pending: <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />,
       running: <Loader2 className="h-3 w-3 animate-spin text-primary" />,
       completed: <Check className="h-3 w-3 text-green-500" />,
       error: <X className="h-3 w-3 text-destructive" />,
@@ -133,13 +129,7 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
 
   // Render bash tool with command
   if (isBashTool && bashInput?.command) {
-    return (
-      <BashToolDisplay
-        bashInput={bashInput}
-        state={state}
-        statusIcon={statusIcon}
-      />
-    );
+    return <BashToolDisplay bashInput={bashInput} state={state} statusIcon={statusIcon} />;
   }
 
   // Render task tool (subagent)
@@ -156,13 +146,7 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
   }
 
   // Default tool display
-  return (
-    <DefaultToolDisplay
-      tool={tool}
-      state={state}
-      statusIcon={statusIcon}
-    />
-  );
+  return <DefaultToolDisplay tool={tool} state={state} statusIcon={statusIcon} />;
 });
 
 interface TodoToolDisplayProps {
@@ -178,8 +162,7 @@ const TodoToolDisplay = memo(function TodoToolDisplay({
   isOpen,
   setIsOpen,
 }: TodoToolDisplayProps) {
-  const completedCount =
-    todoInput.todos?.filter((t) => t.status === "completed").length ?? 0;
+  const completedCount = todoInput.todos?.filter((t) => t.status === "completed").length ?? 0;
 
   return (
     <details
@@ -188,11 +171,7 @@ const TodoToolDisplay = memo(function TodoToolDisplay({
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
     >
       <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
+        {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <ListTodo className="h-3 w-3" />
         <span className="font-mono">
           Tasks ({completedCount}/{todoInput.todos?.length ?? 0})
@@ -231,16 +210,10 @@ const EditToolDisplay = memo(function EditToolDisplay({
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
     >
       <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
+        {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <Pencil className="h-3 w-3" />
         <span className="font-mono">edit</span>
-        <span className="font-mono text-foreground/70 truncate flex-1">
-          {editInput.filePath}
-        </span>
+        <span className="font-mono text-foreground/70 truncate flex-1">{editInput.filePath}</span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
       {/* Only render expensive DiffViewer when open */}
@@ -254,9 +227,7 @@ const EditToolDisplay = memo(function EditToolDisplay({
           {/* Error output */}
           {state.status === "error" && state.error && (
             <div className="mt-2 px-3 py-2 bg-destructive/10 rounded">
-              <div className="text-xs font-medium text-destructive mb-1">
-                Error
-              </div>
+              <div className="text-xs font-medium text-destructive mb-1">Error</div>
               <pre className="text-xs font-mono text-destructive whitespace-pre-wrap">
                 {state.error}
               </pre>
@@ -302,16 +273,10 @@ const FileToolDisplay = memo(function FileToolDisplay({
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
     >
       <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
+        {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <Icon className="h-3 w-3" />
         <span className="font-mono">{label}</span>
-        <span className="font-mono text-foreground/70 truncate flex-1">
-          {filePath}
-        </span>
+        <span className="font-mono text-foreground/70 truncate flex-1">{filePath}</span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
       {/* Only render expensive FileContentViewer when open */}
@@ -330,9 +295,7 @@ const FileToolDisplay = memo(function FileToolDisplay({
           {/* Error output */}
           {hasError && (
             <div className="px-3 py-2">
-              <div className="text-xs font-medium text-destructive mb-1">
-                Error
-              </div>
+              <div className="text-xs font-medium text-destructive mb-1">Error</div>
               <pre
                 className={cn(
                   "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
@@ -361,7 +324,7 @@ const BashToolDisplay = memo(function BashToolDisplay({
   statusIcon,
 }: BashToolDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Format output for display
   const outputContent = useMemo(() => {
     if (state.status === "completed") {
@@ -384,9 +347,7 @@ const BashToolDisplay = memo(function BashToolDisplay({
       <div className="rounded border border-border bg-muted/50">
         <div className="px-3 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2 min-w-0">
           <Terminal className="h-3 w-3 shrink-0" />
-          <span className="font-mono text-foreground/70 truncate">
-            {bashInput.command}
-          </span>
+          <span className="font-mono text-foreground/70 truncate">{bashInput.command}</span>
           <span className="ml-auto shrink-0">{statusIcon}</span>
         </div>
       </div>
@@ -406,9 +367,7 @@ const BashToolDisplay = memo(function BashToolDisplay({
           <ChevronRight className="h-3 w-3 shrink-0" />
         )}
         <Terminal className="h-3 w-3 shrink-0" />
-        <span className="font-mono text-foreground/70 truncate">
-          {bashInput.command}
-        </span>
+        <span className="font-mono text-foreground/70 truncate">{bashInput.command}</span>
         <span className="ml-auto shrink-0">{statusIcon}</span>
       </summary>
       {isOpen && (
@@ -420,9 +379,7 @@ const BashToolDisplay = memo(function BashToolDisplay({
             <pre
               className={cn(
                 "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
-                state.status === "error"
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-background"
+                state.status === "error" ? "bg-destructive/10 text-destructive" : "bg-background"
               )}
             >
               {outputContent}
@@ -490,16 +447,10 @@ const TaskToolDisplay = memo(function TaskToolDisplay({
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
     >
       <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
+        {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <Bot className="h-3 w-3 text-primary" />
         <span className="font-mono text-primary">{agentType}</span>
-        <span className="text-foreground/70 truncate flex-1">
-          {description}
-        </span>
+        <span className="text-foreground/70 truncate flex-1">{description}</span>
         <span className="text-xs text-muted-foreground">{statusText}</span>
         <span className="ml-1">{statusIcon}</span>
       </summary>
@@ -509,9 +460,7 @@ const TaskToolDisplay = memo(function TaskToolDisplay({
           {/* Prompt */}
           {taskInput.prompt && (
             <div className="px-3 py-2 border-b border-primary/20">
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                Task
-              </div>
+              <div className="text-xs font-medium text-muted-foreground mb-1">Task</div>
               <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
                 {taskInput.prompt}
               </pre>
@@ -527,9 +476,7 @@ const TaskToolDisplay = memo(function TaskToolDisplay({
               <pre
                 className={cn(
                   "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
-                  state.status === "error"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-background"
+                  state.status === "error" ? "bg-destructive/10 text-destructive" : "bg-background"
                 )}
               >
                 {outputContent}
@@ -554,7 +501,7 @@ const DefaultToolDisplay = memo(function DefaultToolDisplay({
   statusIcon,
 }: DefaultToolDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Format output for display
   const outputContent = useMemo(() => {
     if (state.status === "completed") {
@@ -593,11 +540,7 @@ const DefaultToolDisplay = memo(function DefaultToolDisplay({
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
     >
       <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
+        {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <Terminal className="h-3 w-3" />
         <span className="font-mono">{tool}</span>
         <span className="ml-auto">{statusIcon}</span>
@@ -607,9 +550,7 @@ const DefaultToolDisplay = memo(function DefaultToolDisplay({
           {/* Input */}
           {hasInput && (
             <div className={cn("px-3 py-2", hasOutput && "border-b border-border")}>
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                Input
-              </div>
+              <div className="text-xs font-medium text-muted-foreground mb-1">Input</div>
               <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap">
                 {JSON.stringify(state.input, null, 2)}
               </pre>
@@ -625,9 +566,7 @@ const DefaultToolDisplay = memo(function DefaultToolDisplay({
               <pre
                 className={cn(
                   "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
-                  state.status === "error"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-background"
+                  state.status === "error" ? "bg-destructive/10 text-destructive" : "bg-background"
                 )}
               >
                 {outputContent}

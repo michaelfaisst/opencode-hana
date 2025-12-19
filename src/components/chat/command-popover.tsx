@@ -60,15 +60,11 @@ export function CommandPopover({
         <span className="text-xs text-muted-foreground">
           Commands {commands.length > 0 && `(${commands.length})`}
         </span>
-        {isLoading && (
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-        )}
+        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
       </div>
       <div className="max-h-56 overflow-y-auto">
         {commands.length === 0 ? (
-          <div className="py-4 text-center text-sm text-muted-foreground">
-            No commands found
-          </div>
+          <div className="py-4 text-center text-sm text-muted-foreground">No commands found</div>
         ) : (
           <div className="p-1">
             {commands.map((command, index) => {
@@ -82,9 +78,9 @@ export function CommandPopover({
                   onClick={() => onSelect(command)}
                   className={cn(
                     "w-full flex items-start gap-3 px-2 py-2 text-left rounded-sm",
-                    "hover:bg-muted",
-                    "focus:bg-muted focus:outline-none",
-                    index === selectedIndex && "bg-muted"
+                    "hover:bg-secondary",
+                    "focus:bg-secondary focus:outline-none",
+                    index === selectedIndex && "bg-secondary"
                   )}
                 >
                   <div className="shrink-0 mt-0.5 p-1 rounded bg-muted">
@@ -94,14 +90,10 @@ export function CommandPopover({
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">/{command.name}</span>
                       {command.shortcut && (
-                        <span className="text-xs text-muted-foreground">
-                          {command.shortcut}
-                        </span>
+                        <span className="text-xs text-muted-foreground">{command.shortcut}</span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {command.description}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{command.description}</span>
                   </div>
                 </button>
               );

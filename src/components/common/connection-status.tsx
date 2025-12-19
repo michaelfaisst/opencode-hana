@@ -6,10 +6,7 @@ interface ConnectionStatusProps {
   className?: string;
 }
 
-export function ConnectionStatus({
-  isConnected,
-  className,
-}: ConnectionStatusProps) {
+export function ConnectionStatus({ isConnected, className }: ConnectionStatusProps) {
   return (
     <div
       className={cn(

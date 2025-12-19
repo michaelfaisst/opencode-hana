@@ -26,12 +26,10 @@ export function useMcpServers() {
       }
       // Transform the object into an array of servers
       const data = response.data ?? {};
-      const servers: McpServer[] = Object.entries(data).map(
-        ([name, status]) => ({
-          name,
-          status: status as McpStatus,
-        })
-      );
+      const servers: McpServer[] = Object.entries(data).map(([name, status]) => ({
+        name,
+        status: status as McpStatus,
+      }));
       return servers;
     },
   });

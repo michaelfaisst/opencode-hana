@@ -5,13 +5,7 @@ import { memo } from "react";
 import { ReasoningDisplay } from "./reasoning-display";
 import { FileDisplay } from "./file-display";
 import { ToolInvocationDisplay } from "./tool-invocation-display";
-import type {
-  Part,
-  TextPart,
-  ToolPart,
-  FilePart,
-  ReasoningPart,
-} from "./types";
+import type { Part, TextPart, ToolPart, FilePart, ReasoningPart } from "./types";
 
 interface MessageItemProps {
   role: "user" | "assistant";
@@ -39,19 +33,13 @@ export const MessageItem = memo(function MessageItem({
     .join("\n");
 
   // Get tool invocations
-  const toolParts = parts.filter(
-    (part): part is ToolPart => part.type === "tool"
-  );
+  const toolParts = parts.filter((part): part is ToolPart => part.type === "tool");
 
   // Get file parts
-  const fileParts = parts.filter(
-    (part): part is FilePart => part.type === "file"
-  );
+  const fileParts = parts.filter((part): part is FilePart => part.type === "file");
 
   // Get reasoning parts
-  const reasoningParts = parts.filter(
-    (part): part is ReasoningPart => part.type === "reasoning"
-  );
+  const reasoningParts = parts.filter((part): part is ReasoningPart => part.type === "reasoning");
 
   // Don't render messages with no visible content (e.g., empty messages from /compact)
   const hasVisibleContent =
@@ -85,9 +73,7 @@ export const MessageItem = memo(function MessageItem({
         </div>
 
         {/* Reasoning content (collapsible) */}
-        {reasoningParts.length > 0 && (
-          <ReasoningDisplay parts={reasoningParts} />
-        )}
+        {reasoningParts.length > 0 && <ReasoningDisplay parts={reasoningParts} />}
 
         {/* Main text content */}
         {textContent && (

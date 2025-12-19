@@ -27,9 +27,9 @@ import { useProviders } from "@/hooks";
 import { useAppSettingsStore, useNotificationStore, NOTIFICATION_SOUNDS } from "@/stores";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, ArrowLeft, Github, Volume2, Bell } from "lucide-react";
-import { 
-  requestNotificationPermission, 
+import { X, ArrowLeft, Github, Volume2, Bell, Mic, Eye, EyeOff } from "lucide-react";
+import {
+  requestNotificationPermission,
   getBrowserNotificationPermission,
   previewSound,
 } from "@/lib/notifications";
@@ -41,6 +41,10 @@ export function SettingsPage() {
     replaceSessionOnNew,
     setDefaultModel,
     setReplaceSessionOnNew,
+    voiceInput,
+    setVoiceInputEnabled,
+    setVoiceInputApiKey,
+    setVoiceInputLanguage,
   } = useAppSettingsStore();
   const {
     notificationsEnabled,
@@ -57,6 +61,7 @@ export function SettingsPage() {
   const { data: providersData, isLoading: isLoadingProviders } = useProviders();
   const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "http://localhost:4096";
   const [inputValue, setInputValue] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
 
   // Sync browser permission state on mount
   useEffect(() => {
@@ -112,12 +117,12 @@ export function SettingsPage() {
   const filteredGroupedModels = useMemo(() => {
     const groups: Record<string, { providerName: string; models: typeof allModels }> = {};
     const query = inputValue.toLowerCase().trim();
-    
+
     for (const model of allModels) {
       if (query && !model.label.toLowerCase().includes(query)) {
         continue;
       }
-      
+
       if (!groups[model.providerID]) {
         groups[model.providerID] = {
           providerName: model.providerName,
@@ -175,8 +180,8 @@ export function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header 
-        title="Settings" 
+      <Header
+        title="Settings"
         leftContent={
           <button
             onClick={handleGoBack}
@@ -189,266 +194,321 @@ export function SettingsPage() {
       />
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Server Connection</CardTitle>
-            <CardDescription>
-              Configure the OpenCode server URL
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="server-url">Server URL</Label>
-              <Input
-                id="server-url"
-                value={serverUrl}
-                disabled
-                className="max-w-sm font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Set via VITE_OPENCODE_SERVER_URL environment variable
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Server Connection</CardTitle>
+              <CardDescription>Configure the OpenCode server URL</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="server-url">Server URL</Label>
+                <Input
+                  id="server-url"
+                  value={serverUrl}
+                  disabled
+                  className="max-w-sm font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Set via VITE_OPENCODE_SERVER_URL environment variable
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Default Model</CardTitle>
-            <CardDescription>
-              Choose the default model for new conversations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="default-model">Model</Label>
-              <div className="flex gap-2 max-w-sm">
-                <Combobox
-                  value={currentModelValue}
-                  onValueChange={handleModelChange}
-                  inputValue={inputValue}
-                  onInputValueChange={setInputValue}
-                  disabled={isLoadingProviders}
-                  itemToStringLabel={itemToStringLabel}
-                >
-                  <ComboboxInput
-                    id="default-model"
-                    className="flex-1"
-                    placeholder={isLoadingProviders ? "Loading..." : (currentModelLabel || "Search models...")}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Default Model</CardTitle>
+              <CardDescription>Choose the default model for new conversations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="default-model">Model</Label>
+                <div className="flex gap-2 max-w-sm">
+                  <Combobox
+                    value={currentModelValue}
+                    onValueChange={handleModelChange}
+                    inputValue={inputValue}
+                    onInputValueChange={setInputValue}
                     disabled={isLoadingProviders}
-                  />
-                  <ComboboxContent className="w-[var(--anchor-width)]">
-                    <ComboboxList>
-                      {filteredGroupedModels.length === 0 && (
-                        <ComboboxEmpty>No models found</ComboboxEmpty>
-                      )}
-                      {filteredGroupedModels.map(([providerID, group], index) => (
-                        <ComboboxGroup key={providerID}>
-                          <ComboboxLabel>{group.providerName}</ComboboxLabel>
-                          {group.models.map((model) => (
-                            <ComboboxItem key={model.value} value={model.value}>
-                              {model.modelName}
-                            </ComboboxItem>
-                          ))}
-                          {index < filteredGroupedModels.length - 1 && <ComboboxSeparator />}
-                        </ComboboxGroup>
-                      ))}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
-                {defaultModel && (
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={clearDefaultModel}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                    itemToStringLabel={itemToStringLabel}
+                  >
+                    <ComboboxInput
+                      id="default-model"
+                      className="flex-1"
+                      placeholder={
+                        isLoadingProviders ? "Loading..." : currentModelLabel || "Search models..."
                       }
+                      disabled={isLoadingProviders}
                     />
-                    <TooltipContent>Clear default model</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {defaultModel 
-                  ? "This model will be selected by default when starting new chats."
-                  : "When not set, the first available model will be used."}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Session Behavior</CardTitle>
-            <CardDescription>
-              Configure how sessions are managed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 max-w-lg">
-              <div className="flex-1 space-y-0.5">
-                <Label htmlFor="replace-session">Replace session on new</Label>
+                    <ComboboxContent className="w-[var(--anchor-width)]">
+                      <ComboboxList>
+                        {filteredGroupedModels.length === 0 && (
+                          <ComboboxEmpty>No models found</ComboboxEmpty>
+                        )}
+                        {filteredGroupedModels.map(([providerID, group], index) => (
+                          <ComboboxGroup key={providerID}>
+                            <ComboboxLabel>{group.providerName}</ComboboxLabel>
+                            {group.models.map((model) => (
+                              <ComboboxItem key={model.value} value={model.value}>
+                                {model.modelName}
+                              </ComboboxItem>
+                            ))}
+                            {index < filteredGroupedModels.length - 1 && <ComboboxSeparator />}
+                          </ComboboxGroup>
+                        ))}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                  {defaultModel && (
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button variant="outline" size="icon" onClick={clearDefaultModel}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Clear default model</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  When enabled, creating a new session will delete the current one and create a fresh session with the same directory and title.
+                  {defaultModel
+                    ? "This model will be selected by default when starting new chats."
+                    : "When not set, the first available model will be used."}
                 </p>
               </div>
-              <Switch
-                id="replace-session"
-                checked={replaceSessionOnNew}
-                onCheckedChange={setReplaceSessionOnNew}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </CardTitle>
-            <CardDescription>
-              Get notified when the assistant finishes responding
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Master toggle */}
-            <div className="flex items-center gap-4 max-w-lg">
-              <div className="flex-1 space-y-0.5">
-                <Label htmlFor="notifications-enabled">Enable notifications</Label>
-                <p className="text-xs text-muted-foreground">
-                  Show notifications when assistant completes a response
-                </p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Session Behavior</CardTitle>
+              <CardDescription>Configure how sessions are managed</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4 max-w-lg">
+                <div className="flex-1 space-y-0.5">
+                  <Label htmlFor="replace-session">Replace session on new</Label>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, creating a new session will delete the current one and create a
+                    fresh session with the same directory and title.
+                  </p>
+                </div>
+                <Switch
+                  id="replace-session"
+                  checked={replaceSessionOnNew}
+                  onCheckedChange={setReplaceSessionOnNew}
+                />
               </div>
-              <Switch
-                id="notifications-enabled"
-                checked={notificationsEnabled}
-                onCheckedChange={setNotificationsEnabled}
-              />
-            </div>
+            </CardContent>
+          </Card>
 
-            {notificationsEnabled && (
-              <>
-                {/* Browser notifications */}
-                <div className="flex items-center gap-4 max-w-lg">
-                  <div className="flex-1 space-y-0.5">
-                    <Label htmlFor="browser-notifications">Browser notifications</Label>
-                    <p className="text-xs text-muted-foreground">
-                      {browserPermission === "granted" 
-                        ? "Show system notifications when tab is in background"
-                        : browserPermission === "denied"
-                        ? "Permission denied - enable in browser settings"
-                        : "Requires permission to show system notifications"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {browserPermission === "default" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRequestPermission}
-                      >
-                        Request Permission
-                      </Button>
-                    )}
-                    <Switch
-                      id="browser-notifications"
-                      checked={browserNotificationsEnabled && browserPermission === "granted"}
-                      onCheckedChange={setBrowserNotificationsEnabled}
-                      disabled={browserPermission !== "granted"}
-                    />
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Notifications
+              </CardTitle>
+              <CardDescription>Get notified when the assistant finishes responding</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Master toggle */}
+              <div className="flex items-center gap-4 max-w-lg">
+                <div className="flex-1 space-y-0.5">
+                  <Label htmlFor="notifications-enabled">Enable notifications</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Show notifications when assistant completes a response
+                  </p>
                 </div>
+                <Switch
+                  id="notifications-enabled"
+                  checked={notificationsEnabled}
+                  onCheckedChange={setNotificationsEnabled}
+                />
+              </div>
 
-                {/* Sound notifications */}
-                <div className="flex items-center gap-4 max-w-lg">
-                  <div className="flex-1 space-y-0.5">
-                    <Label htmlFor="sound-enabled">Sound notifications</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Play a sound when assistant completes
-                    </p>
-                  </div>
-                  <Switch
-                    id="sound-enabled"
-                    checked={soundEnabled}
-                    onCheckedChange={setSoundEnabled}
-                  />
-                </div>
-
-                {/* Sound selector */}
-                {soundEnabled && (
-                  <div className="space-y-2">
-                    <Label>Notification sound</Label>
-                    <div className="flex gap-2 max-w-sm">
-                      <Select 
-                        value={selectedSound} 
-                        onValueChange={(value) => value && setSelectedSound(value as typeof selectedSound)}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue>
-                            {NOTIFICATION_SOUNDS.find((s) => s.id === selectedSound)?.label}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {NOTIFICATION_SOUNDS.map((sound) => (
-                            <SelectItem key={sound.id} value={sound.id}>
-                              {sound.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => previewSound(selectedSound)}
-                            >
-                              <Volume2 className="h-4 w-4" />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>Preview sound</TooltipContent>
-                      </Tooltip>
+              {notificationsEnabled && (
+                <>
+                  {/* Browser notifications */}
+                  <div className="flex items-center gap-4 max-w-lg">
+                    <div className="flex-1 space-y-0.5">
+                      <Label htmlFor="browser-notifications">Browser notifications</Label>
+                      <p className="text-xs text-muted-foreground">
+                        {browserPermission === "granted"
+                          ? "Show system notifications when tab is in background"
+                          : browserPermission === "denied"
+                            ? "Permission denied - enable in browser settings"
+                            : "Requires permission to show system notifications"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {browserPermission === "default" && (
+                        <Button variant="outline" size="sm" onClick={handleRequestPermission}>
+                          Request Permission
+                        </Button>
+                      )}
+                      <Switch
+                        id="browser-notifications"
+                        checked={browserNotificationsEnabled && browserPermission === "granted"}
+                        onCheckedChange={setBrowserNotificationsEnabled}
+                        disabled={browserPermission !== "granted"}
+                      />
                     </div>
                   </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">About</CardTitle>
-            <CardDescription>
-              OpenCode Hana
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p>A mobile-friendly web interface for the OpenCode server.</p>
-              <p>
-                Built with React, Vite, shadcn/ui, and the OpenCode SDK.
-              </p>
-              <a
-                href="https://github.com/michaelfaisst/opencode-hana"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-foreground hover:underline"
-              >
-                <Github className="h-4 w-4" />
-                View on GitHub
-              </a>
-            </div>
-          </CardContent>
-        </Card>
+                  {/* Sound notifications */}
+                  <div className="flex items-center gap-4 max-w-lg">
+                    <div className="flex-1 space-y-0.5">
+                      <Label htmlFor="sound-enabled">Sound notifications</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Play a sound when assistant completes
+                      </p>
+                    </div>
+                    <Switch
+                      id="sound-enabled"
+                      checked={soundEnabled}
+                      onCheckedChange={setSoundEnabled}
+                    />
+                  </div>
+
+                  {/* Sound selector */}
+                  {soundEnabled && (
+                    <div className="space-y-2">
+                      <Label>Notification sound</Label>
+                      <div className="flex gap-2 max-w-sm">
+                        <Select
+                          value={selectedSound}
+                          onValueChange={(value) =>
+                            value && setSelectedSound(value as typeof selectedSound)
+                          }
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue>
+                              {NOTIFICATION_SOUNDS.find((s) => s.id === selectedSound)?.label}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {NOTIFICATION_SOUNDS.map((sound) => (
+                              <SelectItem key={sound.id} value={sound.id}>
+                                {sound.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => previewSound(selectedSound)}
+                              >
+                                <Volume2 className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                          <TooltipContent>Preview sound</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mic className="h-4 w-4" />
+                Voice Input
+              </CardTitle>
+              <CardDescription>Configure voice-to-text input using Deepgram</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Enable voice input toggle */}
+              <div className="flex items-center gap-4 max-w-lg">
+                <div className="flex-1 space-y-0.5">
+                  <Label htmlFor="voice-input-enabled">Enable voice input</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {voiceInput.apiKey
+                      ? "Use your microphone to input text"
+                      : "Requires Deepgram API key"}
+                  </p>
+                </div>
+                <Switch
+                  id="voice-input-enabled"
+                  checked={voiceInput.enabled}
+                  onCheckedChange={setVoiceInputEnabled}
+                  disabled={!voiceInput.apiKey}
+                />
+              </div>
+
+              {/* Deepgram API Key input */}
+              <div className="space-y-2">
+                <Label htmlFor="deepgram-api-key">Deepgram API Key</Label>
+                <div className="flex gap-2 max-w-sm">
+                  <Input
+                    id="deepgram-api-key"
+                    type={showApiKey ? "text" : "password"}
+                    value={voiceInput.apiKey ?? ""}
+                    onChange={(e) => setVoiceInputApiKey(e.target.value || null)}
+                    placeholder="Enter your Deepgram API key"
+                    className="flex-1"
+                  />
+                  <Button variant="outline" size="icon" onClick={() => setShowApiKey(!showApiKey)}>
+                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Get your API key from console.deepgram.com
+                </p>
+              </div>
+
+              {/* Language selector */}
+              {voiceInput.enabled && voiceInput.apiKey && (
+                <div className="space-y-2">
+                  <Label htmlFor="voice-language">Language</Label>
+                  <Select
+                    value={voiceInput.language}
+                    onValueChange={(value) => value && setVoiceInputLanguage(value)}
+                  >
+                    <SelectTrigger className="max-w-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en-US">English (US)</SelectItem>
+                      <SelectItem value="en-GB">English (UK)</SelectItem>
+                      <SelectItem value="en-AU">English (AU)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">About</CardTitle>
+              <CardDescription>OpenCode Hana</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>A mobile-friendly web interface for the OpenCode server.</p>
+                <p>Built with React, Vite, shadcn/ui, and the OpenCode SDK.</p>
+                <a
+                  href="https://github.com/michaelfaisst/opencode-hana"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-foreground hover:underline"
+                >
+                  <Github className="h-4 w-4" />
+                  View on GitHub
+                </a>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

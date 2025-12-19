@@ -1,11 +1,4 @@
-import {
-  Server,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Loader2,
-  Lock,
-} from "lucide-react";
+import { Server, CheckCircle2, XCircle, AlertCircle, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CollapsibleSection } from "./collapsible-section";
 import { Switch } from "@/components/ui/switch";
@@ -15,9 +8,7 @@ import type { McpServer, McpStatus } from "@/hooks/use-mcp-servers";
 import { useConnectMcpServer, useDisconnectMcpServer } from "@/hooks";
 
 export function SidebarMcpServers({ servers, isLoading }: McpServersProps) {
-  const connectedCount = servers.filter(
-    (s) => s.status.status === "connected"
-  ).length;
+  const connectedCount = servers.filter((s) => s.status.status === "connected").length;
 
   const badge =
     servers.length > 0 ? (
@@ -120,7 +111,7 @@ function McpServerRow({ server }: McpServerRowProps) {
 
   const handleToggle = (checked: boolean) => {
     if (isLoading) return;
-    
+
     if (checked) {
       connectMutation.mutate(server.name);
     } else {
@@ -132,23 +123,14 @@ function McpServerRow({ server }: McpServerRowProps) {
     <Tooltip>
       <TooltipTrigger
         render={
-          <div
-            className={cn(
-              "flex items-center gap-2 px-2 py-1.5 rounded-sm",
-              className
-            )}
-          >
+          <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-sm", className)}>
             <div className="shrink-0">{icon}</div>
             <p className="text-xs truncate flex-1">{server.name}</p>
             <div className="shrink-0 flex items-center">
               {isLoading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
               ) : (
-                <Switch
-                  size="sm"
-                  checked={isConnected}
-                  onCheckedChange={handleToggle}
-                />
+                <Switch size="sm" checked={isConnected} onCheckedChange={handleToggle} />
               )}
             </div>
           </div>

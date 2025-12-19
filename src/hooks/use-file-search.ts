@@ -9,11 +9,11 @@ interface UseFileSearchOptions {
 
 export function useFileSearch(options: UseFileSearchOptions = {}) {
   const { debounceMs = 150, directory } = options;
-  
+
   const [files, setFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQueryRef = useRef<string>("");
@@ -90,7 +90,7 @@ export function useFileSearch(options: UseFileSearchOptions = {}) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     setFiles([]);
     setError(null);
     setIsLoading(false);

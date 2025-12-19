@@ -8,12 +8,7 @@ interface ImageLightboxProps {
   alt?: string;
 }
 
-export function ImageLightbox({
-  open,
-  onOpenChange,
-  src,
-  alt = "Image",
-}: ImageLightboxProps) {
+export function ImageLightbox({ open, onOpenChange, src, alt = "Image" }: ImageLightboxProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent

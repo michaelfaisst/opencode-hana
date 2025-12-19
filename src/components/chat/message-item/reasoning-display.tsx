@@ -17,17 +17,11 @@ export function ReasoningDisplay({ parts }: ReasoningDisplayProps) {
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
     >
       <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
+        {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         Reasoning
       </summary>
       <div className="border-t border-border px-3 py-2">
-        <div className="text-xs text-muted-foreground whitespace-pre-wrap">
-          {content}
-        </div>
+        <div className="text-xs text-muted-foreground whitespace-pre-wrap">{content}</div>
       </div>
     </details>
   );

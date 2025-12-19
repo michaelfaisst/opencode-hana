@@ -30,28 +30,19 @@ export function useProjects() {
   return useQuery({
     queryKey: QUERY_KEYS.projects,
     queryFn: async () => {
-      console.log("[useProjects] fetching...");
-      try {
-        const response = await client.project.list();
-        console.log("[useProjects] response:", response);
-        if (response.error) {
-          console.error("[useProjects] error:", response.error);
-          throw new Error("Failed to fetch projects");
-        }
-        // Sort by most recently updated, filter out "global" root project
-        const projects = (response.data ?? []) as Project[];
-        console.log("[useProjects] projects count:", projects.length);
-        return projects
-          .filter((p) => p.worktree !== "/")
-          .sort((a, b) => {
-            const aTime = a.time.updated ?? a.time.created;
-            const bTime = b.time.updated ?? b.time.created;
-            return bTime - aTime;
-          });
-      } catch (err) {
-        console.error("[useProjects] caught error:", err);
-        throw err;
+      const response = await client.project.list();
+      if (response.error) {
+        throw new Error("Failed to fetch projects");
       }
+      // Sort by most recently updated, filter out "global" root project
+      const projects = (response.data ?? []) as Project[];
+      return projects
+        .filter((p) => p.worktree !== "/")
+        .sort((a, b) => {
+          const aTime = a.time.updated ?? a.time.created;
+          const bTime = b.time.updated ?? b.time.created;
+          return bTime - aTime;
+        });
     },
   });
 }

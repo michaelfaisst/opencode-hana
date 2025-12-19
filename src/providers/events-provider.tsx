@@ -21,9 +21,7 @@ interface EventsProviderProps {
 export function EventsProvider({ children }: EventsProviderProps) {
   const events = useEvents();
 
-  return (
-    <EventsContext.Provider value={events}>{children}</EventsContext.Provider>
-  );
+  return <EventsContext.Provider value={events}>{children}</EventsContext.Provider>;
 }
 
 export function useEventsContext() {

@@ -2,7 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MessageSquare, Plus } from "lucide-react";
 import { Header } from "@/components/layout/header";
-import { ChatContainer, SessionsSidebar, RenameSessionDialog, McpServersDialog } from "@/components/chat";
+import {
+  ChatContainer,
+  SessionsSidebar,
+  RenameSessionDialog,
+  McpServersDialog,
+} from "@/components/chat";
 import { CreateSessionDialog } from "@/components/sessions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -43,17 +48,10 @@ export function HomePage() {
 
   // Zustand stores
   const { setSession } = useSessionStore();
-  const {
-    defaultModel,
-    selectedModel,
-    setSelectedModel,
-    replaceSessionOnNew,
-  } = useAppSettingsStore();
-  const { 
-    mobileSessionsSheetOpen, 
-    setMobileSessionsSheetOpen,
-    setMobileChatSheetOpen,
-  } = useUILayoutStore();
+  const { defaultModel, selectedModel, setSelectedModel, replaceSessionOnNew } =
+    useAppSettingsStore();
+  const { mobileSessionsSheetOpen, setMobileSessionsSheetOpen, setMobileChatSheetOpen } =
+    useUILayoutStore();
 
   // Fetch all sessions
   const { data: sessions = [], isLoading: isLoadingSessions } = useSessions();
@@ -63,7 +61,7 @@ export function HomePage() {
 
   // Rename dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  
+
   // MCP servers dialog state
   const [mcpDialogOpen, setMcpDialogOpen] = useState(false);
 
@@ -98,14 +96,15 @@ export function HomePage() {
     isLoading: isLoadingSession,
     error: sessionError,
   } = useSession(activeSessionId || "");
-  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(
-    activeSessionId || ""
-  );
+  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(activeSessionId || "");
   const sendMessage = useSendMessage();
   const abortSession = useAbortSession();
-  const { isBusy: isBusyFromSSE, isRetrying, status, setSessionIdle } = useSessionStatusFromContext(
-    activeSessionId || ""
-  );
+  const {
+    isBusy: isBusyFromSSE,
+    isRetrying,
+    status,
+    setSessionIdle,
+  } = useSessionStatusFromContext(activeSessionId || "");
 
   // Update the session store when session changes
   useEffect(() => {
@@ -142,9 +141,7 @@ export function HomePage() {
     // First, try to use the default model from settings
     if (defaultModel) {
       // Verify the model still exists in providers
-      const provider = providersData.providers.find(
-        (p) => p.id === defaultModel.providerID
-      );
+      const provider = providersData.providers.find((p) => p.id === defaultModel.providerID);
       if (provider?.models?.[defaultModel.modelID]) {
         setSelectedModel(defaultModel);
         return;
@@ -208,142 +205,149 @@ export function HomePage() {
   };
 
   // Handle command execution
-  const handleCommand = useCallback(async (command: Command) => {
-    if (!activeSessionId) return;
+  const handleCommand = useCallback(
+    async (command: Command) => {
+      if (!activeSessionId) return;
 
-    const directory = session?.directory;
+      const directory = session?.directory;
 
-    try {
-      switch (command.name) {
-        case "new": {
-          if (!directory) {
-            console.error("No directory found for session");
-            return;
+      try {
+        switch (command.name) {
+          case "new": {
+            if (!directory) {
+              console.error("No directory found for session");
+              return;
+            }
+
+            // Get the current session's title if we're replacing
+            const currentTitle = session?.title;
+
+            // If replaceSessionOnNew is enabled, delete the current session first
+            if (replaceSessionOnNew) {
+              await deleteSession.mutateAsync(activeSessionId);
+            }
+
+            // Create new session with same directory (and title if replacing)
+            const newSession = await createSession.mutateAsync({
+              title: replaceSessionOnNew ? currentTitle : undefined,
+              directory,
+            });
+            if (newSession?.id) {
+              navigate(`/sessions/${newSession.id}`);
+            }
+            break;
           }
-          
-          // Get the current session's title if we're replacing
-          const currentTitle = session?.title;
-          
-          // If replaceSessionOnNew is enabled, delete the current session first
-          if (replaceSessionOnNew) {
-            await deleteSession.mutateAsync(activeSessionId);
+
+          case "undo": {
+            const lastAssistantMessage = [...messages]
+              .reverse()
+              .find((m) => m.info.role === "assistant");
+            if (!lastAssistantMessage) {
+              console.warn("No assistant message to revert");
+              return;
+            }
+            await revertSession.mutateAsync({
+              sessionId: activeSessionId,
+              messageId: lastAssistantMessage.info.id,
+            });
+            break;
           }
-          
-          // Create new session with same directory (and title if replacing)
-          const newSession = await createSession.mutateAsync({ 
-            title: replaceSessionOnNew ? currentTitle : undefined,
-            directory 
-          });
-          if (newSession?.id) {
-            navigate(`/sessions/${newSession.id}`);
+
+          case "redo": {
+            await unrevertSession.mutateAsync({ sessionId: activeSessionId });
+            break;
           }
-          break;
-        }
 
-        case "undo": {
-          const lastAssistantMessage = [...messages]
-            .reverse()
-            .find((m) => m.info.role === "assistant");
-          if (!lastAssistantMessage) {
-            console.warn("No assistant message to revert");
-            return;
+          case "review": {
+            await sessionCommand.mutateAsync({
+              sessionId: activeSessionId,
+              command: "review",
+            });
+            break;
           }
-          await revertSession.mutateAsync({
-            sessionId: activeSessionId,
-            messageId: lastAssistantMessage.info.id,
-          });
-          break;
-        }
 
-        case "redo": {
-          await unrevertSession.mutateAsync({ sessionId: activeSessionId });
-          break;
-        }
-
-        case "review": {
-          await sessionCommand.mutateAsync({
-            sessionId: activeSessionId,
-            command: "review",
-          });
-          break;
-        }
-
-        case "compact": {
-          if (!selectedModel) {
-            console.error("No model selected for compact");
-            return;
+          case "compact": {
+            if (!selectedModel) {
+              console.error("No model selected for compact");
+              return;
+            }
+            await compactSession.mutateAsync({
+              sessionId: activeSessionId,
+              providerId: selectedModel.providerID,
+              modelId: selectedModel.modelID,
+            });
+            break;
           }
-          await compactSession.mutateAsync({
-            sessionId: activeSessionId,
-            providerId: selectedModel.providerID,
-            modelId: selectedModel.modelID,
-          });
-          break;
-        }
 
-        case "copy": {
-          await copySession.mutateAsync({ sessionId: activeSessionId });
-          break;
-        }
+          case "copy": {
+            await copySession.mutateAsync({ sessionId: activeSessionId });
+            break;
+          }
 
-        case "export": {
-          await exportSession.mutateAsync({
-            sessionId: activeSessionId,
-            sessionTitle: session?.title,
-          });
-          break;
-        }
+          case "export": {
+            await exportSession.mutateAsync({
+              sessionId: activeSessionId,
+              sessionTitle: session?.title,
+            });
+            break;
+          }
 
-        case "rename": {
-          setRenameDialogOpen(true);
-          break;
-        }
+          case "rename": {
+            setRenameDialogOpen(true);
+            break;
+          }
 
-        case "mcp": {
-          setMcpDialogOpen(true);
-          break;
-        }
+          case "mcp": {
+            setMcpDialogOpen(true);
+            break;
+          }
 
-        default:
-          console.warn(`Unknown command: ${command.name}`);
+          default:
+            console.warn(`Unknown command: ${command.name}`);
+        }
+      } catch (error) {
+        console.error(`Failed to execute command ${command.name}:`, error);
       }
-    } catch (error) {
-      console.error(`Failed to execute command ${command.name}:`, error);
-    }
-  }, [
-    activeSessionId,
-    messages,
-    selectedModel,
-    session,
-    replaceSessionOnNew,
-    navigate,
-    createSession,
-    deleteSession,
-    revertSession,
-    unrevertSession,
-    compactSession,
-    sessionCommand,
-    copySession,
-    exportSession,
-  ]);
+    },
+    [
+      activeSessionId,
+      messages,
+      selectedModel,
+      session,
+      replaceSessionOnNew,
+      navigate,
+      createSession,
+      deleteSession,
+      revertSession,
+      unrevertSession,
+      compactSession,
+      sessionCommand,
+      copySession,
+      exportSession,
+    ]
+  );
 
   // Handle session rename
-  const handleRenameSession = useCallback(async (newTitle: string) => {
-    if (!activeSessionId) return;
-    try {
-      await renameSession.mutateAsync({ id: activeSessionId, title: newTitle });
-      setRenameDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to rename session:", error);
-    }
-  }, [activeSessionId, renameSession]);
+  const handleRenameSession = useCallback(
+    async (newTitle: string) => {
+      if (!activeSessionId) return;
+      try {
+        await renameSession.mutateAsync({ id: activeSessionId, title: newTitle });
+        setRenameDialogOpen(false);
+      } catch (error) {
+        console.error("Failed to rename session:", error);
+      }
+    },
+    [activeSessionId, renameSession]
+  );
 
-  const sessionTitle = session?.title || (activeSessionId ? `Session ${activeSessionId.slice(0, 8)}` : undefined);
+  const sessionTitle =
+    session?.title || (activeSessionId ? `Session ${activeSessionId.slice(0, 8)}` : undefined);
   const hasNoSessions = !isLoadingSessions && sortedSessions.length === 0;
 
   return (
     <div className="flex h-screen flex-col">
-      <Header 
+      <Header
         sessionTitle={sessionTitle}
         onOpenMobileSessionsSheet={() => setMobileSessionsSheetOpen(true)}
         onOpenMobileChatSheet={() => setMobileChatSheetOpen(true)}
@@ -356,10 +360,7 @@ export function HomePage() {
         {/* Main content area */}
         <div className="flex-1 overflow-hidden">
           {hasNoSessions ? (
-            <EmptyState
-              onCreateSession={handleCreateSession}
-              isLoading={createSession.isPending}
-            />
+            <EmptyState onCreateSession={handleCreateSession} isLoading={createSession.isPending} />
           ) : (
             <ChatContainer
               messages={messages}
@@ -382,9 +383,9 @@ export function HomePage() {
       <Sheet open={mobileSessionsSheetOpen} onOpenChange={setMobileSessionsSheetOpen}>
         <SheetContent side="left" className="w-64 max-w-[85vw] p-0" showCloseButton={false}>
           <SheetTitle className="sr-only">Sessions</SheetTitle>
-          <SessionsSidebar 
-            forceExpanded 
-            onSessionSelect={() => setMobileSessionsSheetOpen(false)} 
+          <SessionsSidebar
+            forceExpanded
+            onSessionSelect={() => setMobileSessionsSheetOpen(false)}
           />
         </SheetContent>
       </Sheet>
@@ -399,10 +400,7 @@ export function HomePage() {
       />
 
       {/* MCP servers dialog */}
-      <McpServersDialog
-        open={mcpDialogOpen}
-        onOpenChange={setMcpDialogOpen}
-      />
+      <McpServersDialog open={mcpDialogOpen} onOpenChange={setMcpDialogOpen} />
     </div>
   );
 }
@@ -423,8 +421,8 @@ function EmptyState({ onCreateSession, isLoading }: EmptyStateProps) {
       </div>
       <h2 className="text-xl font-semibold mb-2">No sessions yet</h2>
       <p className="text-muted-foreground mb-6 max-w-md">
-        Create your first session to start chatting with OpenCode. Each session
-        is tied to a project directory.
+        Create your first session to start chatting with OpenCode. Each session is tied to a project
+        directory.
       </p>
       <Button onClick={() => setDialogOpen(true)} disabled={isLoading}>
         <Plus className="h-4 w-4 mr-2" />

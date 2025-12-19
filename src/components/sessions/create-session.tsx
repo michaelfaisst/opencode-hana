@@ -43,7 +43,7 @@ export function CreateSessionDialog({
   showTrigger = true,
 }: CreateSessionDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  
+
   // Determine if we're in controlled or uncontrolled mode
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -78,9 +78,7 @@ export function CreateSessionDialog({
     const query = inputValue.toLowerCase().trim();
     if (!query) return projectOptions;
     return projectOptions.filter(
-      (p) =>
-        p.label.toLowerCase().includes(query) ||
-        p.path.toLowerCase().includes(query)
+      (p) => p.label.toLowerCase().includes(query) || p.path.toLowerCase().includes(query)
     );
   }, [projectOptions, inputValue]);
 

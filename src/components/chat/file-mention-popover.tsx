@@ -81,9 +81,7 @@ export function FileMentionPopover({
             <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
           </div>
         ) : files.length === 0 ? (
-          <div className="py-4 text-center text-sm text-muted-foreground">
-            No files found
-          </div>
+          <div className="py-4 text-center text-sm text-muted-foreground">No files found</div>
         ) : (
           <div className="p-1">
             {files.map((file, index) => (
@@ -95,9 +93,9 @@ export function FileMentionPopover({
                 onClick={() => onSelect(file)}
                 className={cn(
                   "w-full flex items-start gap-2 px-2 py-1.5 text-left rounded-sm text-sm",
-                  "hover:bg-muted",
-                  "focus:bg-muted focus:outline-none",
-                  index === selectedIndex && "bg-muted"
+                  "hover:bg-secondary",
+                  "focus:bg-secondary focus:outline-none",
+                  index === selectedIndex && "bg-secondary"
                 )}
               >
                 <File className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />

@@ -13,9 +13,8 @@ import { CollapsibleSection } from "./collapsible-section";
 import type { ChangedFilesProps, ChangedFile } from "./types";
 
 export function SidebarChangedFiles({ files }: ChangedFilesProps) {
-  const badge = files.length > 0 ? (
-    <span className="text-xs text-muted-foreground">{files.length}</span>
-  ) : null;
+  const badge =
+    files.length > 0 ? <span className="text-xs text-muted-foreground">{files.length}</span> : null;
 
   return (
     <CollapsibleSection
@@ -80,22 +79,14 @@ function ChangedFileRow({ file }: ChangedFileRowProps) {
           <span className="shrink-0">{statusIndicator}</span>
         </div>
         <div className="flex items-center gap-2">
-          {dirPath && (
-            <p className="text-[10px] text-muted-foreground truncate">
-              {dirPath}
-            </p>
-          )}
+          {dirPath && <p className="text-[10px] text-muted-foreground truncate">{dirPath}</p>}
           {hasChanges && (
             <div className="flex items-center gap-1.5 shrink-0">
               {file.additions > 0 && (
-                <span className="text-[10px] font-mono text-green-500">
-                  +{file.additions}
-                </span>
+                <span className="text-[10px] font-mono text-green-500">+{file.additions}</span>
               )}
               {file.deletions > 0 && (
-                <span className="text-[10px] font-mono text-red-500">
-                  -{file.deletions}
-                </span>
+                <span className="text-[10px] font-mono text-red-500">-{file.deletions}</span>
               )}
             </div>
           )}

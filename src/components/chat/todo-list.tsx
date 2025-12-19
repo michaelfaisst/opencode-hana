@@ -39,19 +39,19 @@ export function TodoList({ messages, className }: TodoListProps) {
   // Extract todos from the most recent assistant message that has todowrite calls
   const todos = useMemo(() => {
     let latestTodos: TodoItem[] = [];
-    
+
     // Iterate backwards to find the most recent assistant message with todos
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
       if (message.role !== "assistant") continue;
-      
+
       for (const part of message.parts) {
         if (part.type === "tool") {
           const toolPart = part as unknown as ToolPart;
           if (toolPart.tool === "todowrite" && toolPart.state?.input?.todos) {
             // Found todos - merge by ID within this message
             const todosById = new Map<string, TodoItem>();
-            
+
             for (const p of message.parts) {
               if (p.type === "tool") {
                 const tp = p as unknown as ToolPart;
@@ -62,16 +62,16 @@ export function TodoList({ messages, className }: TodoListProps) {
                 }
               }
             }
-            
+
             latestTodos = Array.from(todosById.values());
             break;
           }
         }
       }
-      
+
       if (latestTodos.length > 0) break;
     }
-    
+
     return latestTodos;
   }, [messages]);
 
@@ -79,7 +79,7 @@ export function TodoList({ messages, className }: TodoListProps) {
     return null;
   }
 
-  const completedCount = todos.filter(t => t.status === "completed").length;
+  const completedCount = todos.filter((t) => t.status === "completed").length;
   const progress = Math.round((completedCount / todos.length) * 100);
 
   return (
@@ -95,14 +95,14 @@ export function TodoList({ messages, className }: TodoListProps) {
             {completedCount}/{todos.length}
           </span>
           <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-primary transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
       </div>
-      
+
       {/* Todo items */}
       <div className="divide-y divide-border">
         {todos.map((todo) => (
@@ -122,32 +122,44 @@ function TodoItemRow({ todo }: { todo: TodoItem }) {
   }[todo.status];
 
   const priorityBadge = {
-    high: <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-red-500/10 text-red-500">HIGH</span>,
-    medium: <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-500/10 text-yellow-500">MED</span>,
-    low: <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-blue-500/10 text-blue-500">LOW</span>,
+    high: (
+      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-red-500/10 text-red-500">
+        HIGH
+      </span>
+    ),
+    medium: (
+      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-500/10 text-yellow-500">
+        MED
+      </span>
+    ),
+    low: (
+      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-blue-500/10 text-blue-500">
+        LOW
+      </span>
+    ),
   }[todo.priority];
 
   return (
-    <div className={cn(
-      "flex items-start gap-2 px-3 py-2",
-      todo.status === "completed" && "opacity-60",
-      todo.status === "cancelled" && "opacity-40"
-    )}>
-      <div className="mt-0.5 shrink-0">
-        {statusIcon}
-      </div>
+    <div
+      className={cn(
+        "flex items-start gap-2 px-3 py-2",
+        todo.status === "completed" && "opacity-60",
+        todo.status === "cancelled" && "opacity-40"
+      )}
+    >
+      <div className="mt-0.5 shrink-0">{statusIcon}</div>
       <div className="flex-1 min-w-0">
-        <p className={cn(
-          "text-sm",
-          todo.status === "completed" && "line-through",
-          todo.status === "cancelled" && "line-through"
-        )}>
+        <p
+          className={cn(
+            "text-sm",
+            todo.status === "completed" && "line-through",
+            todo.status === "cancelled" && "line-through"
+          )}
+        >
           {todo.content}
         </p>
       </div>
-      <div className="shrink-0">
-        {priorityBadge}
-      </div>
+      <div className="shrink-0">{priorityBadge}</div>
     </div>
   );
 }
@@ -155,7 +167,7 @@ function TodoItemRow({ todo }: { todo: TodoItem }) {
 // Compact inline version for showing in message stream (no wrapper - used inside ToolInvocationDisplay)
 export function InlineTodoList({ todos }: { todos: TodoItem[] }) {
   if (todos.length === 0) return null;
-  
+
   return (
     <div className="space-y-1">
       {todos.map((todo) => (
@@ -169,10 +181,13 @@ export function InlineTodoList({ todos }: { todos: TodoItem[] }) {
           ) : (
             <Circle className="h-3 w-3 text-muted-foreground shrink-0" />
           )}
-          <span className={cn(
-            "truncate",
-            (todo.status === "completed" || todo.status === "cancelled") && "line-through opacity-60"
-          )}>
+          <span
+            className={cn(
+              "truncate",
+              (todo.status === "completed" || todo.status === "cancelled") &&
+                "line-through opacity-60"
+            )}
+          >
             {todo.content}
           </span>
         </div>

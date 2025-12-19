@@ -44,22 +44,18 @@ export const useUILayoutStore = create<UILayoutStore>()(
         set((state) => ({
           sessionsSidebarCollapsed: !state.sessionsSidebarCollapsed,
         })),
-      setSessionsSidebarCollapsed: (collapsed) =>
-        set({ sessionsSidebarCollapsed: collapsed }),
+      setSessionsSidebarCollapsed: (collapsed) => set({ sessionsSidebarCollapsed: collapsed }),
 
       // Chat sidebar
       toggleChatSidebar: () =>
         set((state) => ({
           chatSidebarCollapsed: !state.chatSidebarCollapsed,
         })),
-      setChatSidebarCollapsed: (collapsed) =>
-        set({ chatSidebarCollapsed: collapsed }),
+      setChatSidebarCollapsed: (collapsed) => set({ chatSidebarCollapsed: collapsed }),
 
       // Mobile sheet actions
-      setMobileSessionsSheetOpen: (open) =>
-        set({ mobileSessionsSheetOpen: open }),
-      setMobileChatSheetOpen: (open) =>
-        set({ mobileChatSheetOpen: open }),
+      setMobileSessionsSheetOpen: (open) => set({ mobileSessionsSheetOpen: open }),
+      setMobileChatSheetOpen: (open) => set({ mobileChatSheetOpen: open }),
 
       // Collapsible sections
       setSectionCollapsed: (key, collapsed) =>

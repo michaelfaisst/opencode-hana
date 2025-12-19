@@ -35,11 +35,15 @@
 
 /* Synthwave '84 Code Glow Effects */
 .synthwave-84 code {
-  text-shadow: 0 0 8px #ff7edb, 0 0 16px rgba(255, 126, 219, 0.5);
+  text-shadow:
+    0 0 8px #ff7edb,
+    0 0 16px rgba(255, 126, 219, 0.5);
 }
 
 .synthwave-84 pre {
-  box-shadow: 0 0 12px rgba(255, 126, 219, 0.3), 0 0 24px rgba(54, 249, 246, 0.15);
+  box-shadow:
+    0 0 12px rgba(255, 126, 219, 0.3),
+    0 0 24px rgba(54, 249, 246, 0.15);
 }
 
 .synthwave-84 .shiki span {

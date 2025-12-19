@@ -30,7 +30,7 @@ export const ShikiCodeBlock = memo(function ShikiCodeBlock({
   // Get current theme and map to Shiki theme
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const shikiTheme = getShikiTheme(resolvedTheme);
-  
+
   // Normalize language name for Shiki
   const normalizedLang = normalizeLanguage(language);
 
@@ -76,7 +76,7 @@ export const ShikiInlineCode = memo(function ShikiInlineCode({
   // Get current theme and map to Shiki theme
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const shikiTheme = getShikiTheme(resolvedTheme);
-  
+
   const normalizedLang = normalizeLanguage(language);
 
   // Use the hook for more control over inline rendering
@@ -86,11 +86,7 @@ export const ShikiInlineCode = memo(function ShikiInlineCode({
     shikiTheme
   );
 
-  return (
-    <span className={cn("shiki-inline font-mono text-xs", className)}>
-      {highlighted}
-    </span>
-  );
+  return <span className={cn("shiki-inline font-mono text-xs", className)}>{highlighted}</span>;
 });
 
 /**

@@ -95,7 +95,7 @@ export function ChatContainer({
   const { data: providersData } = useProviders();
   const { selectedModel, agentMode, toggleAgentMode } = useAppSettingsStore();
   const { mobileChatSheetOpen, setMobileChatSheetOpen } = useUILayoutStore();
-  
+
   // Message queue for when agent is busy
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
   const processingRef = useRef(false);
@@ -104,22 +104,22 @@ export function ChatContainer({
   // Get context limit for the selected model
   const contextLimit = useMemo(() => {
     if (!selectedModel || !providersData?.providers) return undefined;
-    
-    const provider = providersData.providers.find(
-      (p) => p.id === selectedModel.providerID
-    );
+
+    const provider = providersData.providers.find((p) => p.id === selectedModel.providerID);
     if (!provider?.models) return undefined;
-    
-    const model = provider.models[selectedModel.modelID] as { 
-      limit?: { context?: number } 
-    } | undefined;
-    
+
+    const model = provider.models[selectedModel.modelID] as
+      | {
+          limit?: { context?: number };
+        }
+      | undefined;
+
     return model?.limit?.context;
   }, [selectedModel, providersData]);
 
   // Convert messages to format expected by ChatSidebar
   const sidebarMessages = useMemo(() => {
-    return messages.map(m => ({
+    return messages.map((m) => ({
       role: m.info.role,
       parts: m.parts,
       tokens: m.info.tokens,
@@ -132,10 +132,10 @@ export function ChatContainer({
     if (!isBusy && !isSending && messageQueue.length > 0 && !processingRef.current) {
       processingRef.current = true;
       const nextMessage = messageQueue[0];
-      
+
       // Small delay to let the UI update, then update state and send
       setTimeout(() => {
-        setMessageQueue(prev => prev.slice(1));
+        setMessageQueue((prev) => prev.slice(1));
         onSendMessage(nextMessage.text, nextMessage.images);
         processingRef.current = false;
       }, 100);
@@ -145,46 +145,52 @@ export function ChatContainer({
   // Send notification when assistant finishes responding
   useEffect(() => {
     const isCurrentlyBusy = isBusy || isRetrying;
-    
+
     // Detect transition from busy to not busy
     if (wasBusyRef.current && !isCurrentlyBusy) {
       sendCompletionNotification();
     }
-    
+
     wasBusyRef.current = isCurrentlyBusy ?? false;
   }, [isBusy, isRetrying]);
 
   // Handle sending message (queue if busy)
-  const handleSendMessage = useCallback((text: string, images?: ImageAttachment[]) => {
-    if (isBusy || isSending) {
-      // Add to queue
-      setMessageQueue(prev => [...prev, { 
-        id: crypto.randomUUID(), 
-        text, 
-        images 
-      }]);
-    } else {
-      onSendMessage(text, images);
-    }
-  }, [isBusy, isSending, onSendMessage]);
+  const handleSendMessage = useCallback(
+    (text: string, images?: ImageAttachment[]) => {
+      if (isBusy || isSending) {
+        // Add to queue
+        setMessageQueue((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            text,
+            images,
+          },
+        ]);
+      } else {
+        onSendMessage(text, images);
+      }
+    },
+    [isBusy, isSending, onSendMessage]
+  );
 
   // Remove a queued message
   const removeFromQueue = useCallback((id: string) => {
-    setMessageQueue(prev => prev.filter(m => m.id !== id));
+    setMessageQueue((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
   return (
     <div className="flex h-full">
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <MessageList 
+        <MessageList
           key={sessionId}
-          messages={messages} 
+          messages={messages}
           isLoading={isLoadingMessages}
           isBusy={isBusy}
           isRetrying={isRetrying}
         />
-        
+
         {/* Streaming indicator - shown instantly when busy */}
         {(isBusy || isRetrying) && (
           <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground border-t border-border bg-muted/30">
@@ -203,7 +209,7 @@ export function ChatContainer({
             )}
           </div>
         )}
-        
+
         {/* Queued messages */}
         {messageQueue.length > 0 && (
           <div className="border-t border-border bg-muted/30">
@@ -213,17 +219,13 @@ export function ChatContainer({
               </div>
               <div className="space-y-2">
                 {messageQueue.map((queuedMsg, index) => (
-                  <div 
+                  <div
                     key={queuedMsg.id}
                     className="flex items-start gap-2 bg-background rounded border border-border p-2"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        #{index + 1}
-                      </div>
-                      <div className="text-sm truncate">
-                        {queuedMsg.text || "(no text)"}
-                      </div>
+                      <div className="text-xs text-muted-foreground mb-1">#{index + 1}</div>
+                      <div className="text-sm truncate">{queuedMsg.text || "(no text)"}</div>
                       {queuedMsg.images && queuedMsg.images.length > 0 && (
                         <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                           <ImageIcon className="h-3 w-3" />
@@ -246,7 +248,7 @@ export function ChatContainer({
             </div>
           </div>
         )}
-        
+
         <div className="border-t border-border bg-background">
           <MessageInput
             onSendMessage={handleSendMessage}
@@ -259,11 +261,11 @@ export function ChatContainer({
           />
         </div>
       </div>
-      
+
       {/* Desktop sidebar - hidden on small screens */}
       <div className="hidden lg:block shrink-0">
-        <ChatSidebar 
-          messages={sidebarMessages} 
+        <ChatSidebar
+          messages={sidebarMessages}
           contextLimit={contextLimit}
           onCommand={onCommand}
           hasSession={true}
@@ -275,8 +277,8 @@ export function ChatContainer({
       <Sheet open={mobileChatSheetOpen} onOpenChange={setMobileChatSheetOpen}>
         <SheetContent side="right" className="w-80 p-0" showCloseButton={false}>
           <SheetTitle className="sr-only">Session Info</SheetTitle>
-          <ChatSidebar 
-            messages={sidebarMessages} 
+          <ChatSidebar
+            messages={sidebarMessages}
             contextLimit={contextLimit}
             onCommand={onCommand}
             hasSession={true}

@@ -6,14 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Server,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Loader2,
-  Lock,
-} from "lucide-react";
+import { Server, CheckCircle2, XCircle, AlertCircle, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useMcpServers,
@@ -86,18 +79,21 @@ export function McpServersDialog({ open, onOpenChange }: McpServersDialogProps) 
   const { data: servers = [], isLoading } = useMcpServers();
   const connectMutation = useConnectMcpServer();
   const disconnectMutation = useDisconnectMcpServer();
-  
+
   const [selectedIndex, setSelectedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Handle dialog open state change with selection reset
-  const handleOpenChange = useCallback((isOpen: boolean) => {
-    if (isOpen) {
-      setSelectedIndex(0);
-    }
-    onOpenChange(isOpen);
-  }, [onOpenChange]);
+  const handleOpenChange = useCallback(
+    (isOpen: boolean) => {
+      if (isOpen) {
+        setSelectedIndex(0);
+      }
+      onOpenChange(isOpen);
+    },
+    [onOpenChange]
+  );
 
   // Scroll selected item into view
   useEffect(() => {
@@ -107,68 +103,68 @@ export function McpServersDialog({ open, onOpenChange }: McpServersDialogProps) 
     }
   }, [selectedIndex]);
 
-  const toggleServer = useCallback((server: McpServer) => {
-    const { isConnected } = getStatusInfo(server.status);
-    if (connectMutation.isPending || disconnectMutation.isPending) return;
-    
-    if (isConnected) {
-      disconnectMutation.mutate(server.name);
-    } else {
-      connectMutation.mutate(server.name);
-    }
-  }, [connectMutation, disconnectMutation]);
+  const toggleServer = useCallback(
+    (server: McpServer) => {
+      const { isConnected } = getStatusInfo(server.status);
+      if (connectMutation.isPending || disconnectMutation.isPending) return;
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (servers.length === 0) return;
+      if (isConnected) {
+        disconnectMutation.mutate(server.name);
+      } else {
+        connectMutation.mutate(server.name);
+      }
+    },
+    [connectMutation, disconnectMutation]
+  );
 
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % servers.length);
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + servers.length) % servers.length);
-        break;
-      case " ":
-        e.preventDefault();
-        toggleServer(servers[selectedIndex]);
-        break;
-      case "Enter":
-        e.preventDefault();
-        toggleServer(servers[selectedIndex]);
-        break;
-      case "Escape":
-        e.preventDefault();
-        handleOpenChange(false);
-        break;
-    }
-  }, [servers, selectedIndex, toggleServer, handleOpenChange]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (servers.length === 0) return;
 
-  const connectedCount = servers.filter(
-    (s) => s.status.status === "connected"
-  ).length;
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev + 1) % servers.length);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev - 1 + servers.length) % servers.length);
+          break;
+        case " ":
+          e.preventDefault();
+          toggleServer(servers[selectedIndex]);
+          break;
+        case "Enter":
+          e.preventDefault();
+          toggleServer(servers[selectedIndex]);
+          break;
+        case "Escape":
+          e.preventDefault();
+          handleOpenChange(false);
+          break;
+      }
+    },
+    [servers, selectedIndex, toggleServer, handleOpenChange]
+  );
+
+  const connectedCount = servers.filter((s) => s.status.status === "connected").length;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent 
-        className="sm:max-w-md"
-        onKeyDown={handleKeyDown}
-      >
+      <DialogContent className="sm:max-w-md" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Server className="h-4 w-4" />
             MCP Servers
           </DialogTitle>
           <DialogDescription>
-            {servers.length > 0 
+            {servers.length > 0
               ? `${connectedCount} of ${servers.length} servers connected. Use arrow keys to navigate, space to toggle.`
-              : "Manage your MCP server connections."
-            }
+              : "Manage your MCP server connections."}
           </DialogDescription>
         </DialogHeader>
-        
-        <div 
+
+        <div
           ref={listRef}
           className="py-2 max-h-[300px] overflow-y-auto focus:outline-none"
           tabIndex={0}
@@ -183,7 +179,9 @@ export function McpServersDialog({ open, onOpenChange }: McpServersDialogProps) 
               {servers.map((server, index) => (
                 <McpServerItem
                   key={server.name}
-                  ref={(el) => { itemRefs.current[index] = el; }}
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
                   server={server}
                   isSelected={index === selectedIndex}
                   isLoading={
@@ -240,50 +238,47 @@ interface McpServerItemProps {
 
 import { forwardRef } from "react";
 
-const McpServerItem = forwardRef<HTMLDivElement, McpServerItemProps>(
-  function McpServerItem({ server, isSelected, isLoading, onClick, onMouseEnter }, ref) {
-    const { icon, label, className, isConnected } = getStatusInfo(server.status);
+const McpServerItem = forwardRef<HTMLDivElement, McpServerItemProps>(function McpServerItem(
+  { server, isSelected, isLoading, onClick, onMouseEnter },
+  ref
+) {
+  const { icon, label, className, isConnected } = getStatusInfo(server.status);
 
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-sm cursor-pointer transition-colors",
-          isSelected ? "bg-accent" : "hover:bg-accent/50",
-          className
-        )}
-        onClick={onClick}
-        onMouseEnter={onMouseEnter}
-        role="option"
-        aria-selected={isSelected}
-      >
-        <div className="shrink-0">
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : (
-            icon
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 rounded-sm cursor-pointer transition-colors",
+        isSelected ? "bg-accent" : "hover:bg-accent/50",
+        className
+      )}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      role="option"
+      aria-selected={isSelected}
+    >
+      <div className="shrink-0">
+        {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{server.name}</p>
+        <p className="text-xs text-muted-foreground truncate">{label}</p>
+      </div>
+      <div className="shrink-0">
+        <div
+          className={cn(
+            "w-8 h-5 rounded-full transition-colors relative",
+            isConnected ? "bg-green-500" : "bg-muted-foreground/30"
           )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{server.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{label}</p>
-        </div>
-        <div className="shrink-0">
+        >
           <div
             className={cn(
-              "w-8 h-5 rounded-full transition-colors relative",
-              isConnected ? "bg-green-500" : "bg-muted-foreground/30"
+              "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform",
+              isConnected ? "translate-x-3.5" : "translate-x-0.5"
             )}
-          >
-            <div
-              className={cn(
-                "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform",
-                isConnected ? "translate-x-3.5" : "translate-x-0.5"
-              )}
-            />
-          </div>
+          />
         </div>
       </div>
-    );
-  }
-);
+    </div>
+  );
+});

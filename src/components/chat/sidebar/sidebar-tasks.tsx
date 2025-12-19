@@ -1,10 +1,4 @@
-import {
-  ListTodo,
-  Circle,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
+import { ListTodo, Circle, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CollapsibleSection } from "./collapsible-section";
 import type { TasksProps, TodoItem } from "./types";
@@ -12,14 +6,14 @@ import type { TasksProps, TodoItem } from "./types";
 export function SidebarTasks({ todos }: TasksProps) {
   const completedCount = todos.filter((t) => t.status === "completed").length;
   const inProgressCount = todos.filter((t) => t.status === "in_progress").length;
-  const progress =
-    todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
+  const progress = todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
 
-  const badge = todos.length > 0 ? (
-    <span className="text-xs text-muted-foreground">
-      {completedCount}/{todos.length}
-    </span>
-  ) : null;
+  const badge =
+    todos.length > 0 ? (
+      <span className="text-xs text-muted-foreground">
+        {completedCount}/{todos.length}
+      </span>
+    ) : null;
 
   return (
     <CollapsibleSection
@@ -95,8 +89,7 @@ function TodoItemRow({ todo }: TodoItemRowProps) {
       <p
         className={cn(
           "text-xs leading-relaxed",
-          (todo.status === "completed" || todo.status === "cancelled") &&
-            "line-through"
+          (todo.status === "completed" || todo.status === "cancelled") && "line-through"
         )}
       >
         {todo.content}

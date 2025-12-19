@@ -8,15 +8,15 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   if (typeof Notification === "undefined") {
     return "denied";
   }
-  
+
   if (Notification.permission === "granted") {
     return "granted";
   }
-  
+
   if (Notification.permission === "denied") {
     return "denied";
   }
-  
+
   const permission = await Notification.requestPermission();
   useNotificationStore.getState().setBrowserPermission(permission);
   return permission;
@@ -62,18 +62,15 @@ interface CompletionNotificationOptions {
  * - Plays sound if enabled
  */
 export function sendCompletionNotification(options: CompletionNotificationOptions = {}): void {
-  const { 
-    title = "OpenCode", 
-    body = "Assistant has finished responding" 
-  } = options;
-  
+  const { title = "OpenCode", body = "Assistant has finished responding" } = options;
+
   const state = useNotificationStore.getState();
-  
+
   // Check if notifications are enabled at all
   if (!state.notificationsEnabled) {
     return;
   }
-  
+
   // Try browser notification if enabled
   if (state.browserNotificationsEnabled && Notification.permission === "granted") {
     // Only show browser notification if tab is not focused
@@ -89,12 +86,12 @@ export function sendCompletionNotification(options: CompletionNotificationOption
       }
     }
   }
-  
+
   // Always show toast (when notifications are enabled)
   toast.success(body, {
     duration: 3000,
   });
-  
+
   // Play sound if enabled
   if (state.soundEnabled) {
     playNotificationSound(state.selectedSound);

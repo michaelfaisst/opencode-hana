@@ -8,6 +8,7 @@ import { CommandPopover } from "./command-popover";
 import { ImageLightbox } from "./image-lightbox";
 import { ImagePreviewGrid } from "./message-input/image-preview-grid";
 import { InputControlsRow } from "./message-input/input-controls-row";
+import { VoiceInputButton, type VoiceInputButtonRef } from "./message-input/voice-input-button";
 import { useFileSearch } from "@/hooks/use-file-search";
 import { useInputHistory } from "@/hooks/use-input-history";
 import { filterCommands, type Command } from "@/hooks/use-commands";
@@ -52,9 +53,7 @@ export const MessageInput = memo(function MessageInput({
   const [message, setMessage] = useState("");
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [lightboxImage, setLightboxImage] = useState<ImageAttachment | null>(
-    null
-  );
+  const [lightboxImage, setLightboxImage] = useState<ImageAttachment | null>(null);
   const [mentionState, setMentionState] = useState<MentionState>({
     isActive: false,
     startIndex: -1,
@@ -66,10 +65,18 @@ export const MessageInput = memo(function MessageInput({
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const voiceInputRef = useRef<VoiceInputButtonRef>(null);
+
+  // Track committed text during voice transcription
+  // This holds all finalized text, while interim results are displayed temporarily
+  const voiceCommittedTextRef = useRef<string>("");
 
   // Get the session's directory from the store
   const directory = useSessionStore((state) => state.directory);
-  const { selectedModel, setSelectedModel } = useAppSettingsStore();
+  const { selectedModel, setSelectedModel, voiceInput } = useAppSettingsStore();
+
+  // Check if voice input is available (enabled and has API key)
+  const isVoiceInputAvailable = voiceInput.enabled && !!voiceInput.apiKey;
 
   const {
     files,
@@ -79,19 +86,11 @@ export const MessageInput = memo(function MessageInput({
   } = useFileSearch({ directory: directory ?? undefined });
 
   // Input history for arrow key navigation
-  const {
-    addToHistory,
-    navigateUp,
-    navigateDown,
-    resetNavigation,
-    isNavigating,
-    historyLength,
-  } = useInputHistory();
+  const { addToHistory, navigateUp, navigateDown, resetNavigation, isNavigating, historyLength } =
+    useInputHistory();
 
   // Filter commands based on query
-  const filteredCommands = commandState.isActive
-    ? filterCommands(commandState.query)
-    : [];
+  const filteredCommands = commandState.isActive ? filterCommands(commandState.query) : [];
 
   // Compute effective selected index, clamped to valid range
   // This avoids needing to reset state when lists change
@@ -103,7 +102,13 @@ export const MessageInput = memo(function MessageInput({
       return Math.min(selectedIndex, files.length - 1);
     }
     return 0;
-  }, [selectedIndex, commandState.isActive, mentionState.isActive, filteredCommands.length, files.length]);
+  }, [
+    selectedIndex,
+    commandState.isActive,
+    mentionState.isActive,
+    filteredCommands.length,
+    files.length,
+  ]);
 
   // Auto-focus textarea on mount if autoFocus is true
   useEffect(() => {
@@ -133,6 +138,25 @@ export const MessageInput = memo(function MessageInput({
       clearFiles();
     }
   }, [mentionState.isActive, mentionState.query, searchFiles, clearFiles]);
+
+  // Keyboard shortcut for voice input (Alt+Shift)
+  useEffect(() => {
+    if (!isVoiceInputAvailable) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt+Shift triggers voice input toggle
+      // Trigger when Shift is pressed while Alt is held, or Alt pressed while Shift is held
+      const isAltShiftCombo = (e.key === "Shift" && e.altKey) || (e.key === "Alt" && e.shiftKey);
+
+      if (isAltShiftCombo && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        voiceInputRef.current?.toggle();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isVoiceInputAvailable]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -197,21 +221,14 @@ export const MessageInput = memo(function MessageInput({
         });
       }
     },
-    [
-      mentionState.isActive,
-      commandState.isActive,
-      isNavigating,
-      resetNavigation,
-    ]
+    [mentionState.isActive, commandState.isActive, isNavigating, resetNavigation]
   );
 
   const handleSelectFile = useCallback(
     (file: string) => {
       // Replace the @query with @file
       const beforeMention = message.slice(0, mentionState.startIndex);
-      const afterMention = message.slice(
-        mentionState.startIndex + mentionState.query.length + 1
-      );
+      const afterMention = message.slice(mentionState.startIndex + mentionState.query.length + 1);
 
       const newMessage = `${beforeMention}@${file} ${afterMention}`;
       setMessage(newMessage);
@@ -305,6 +322,27 @@ export const MessageInput = memo(function MessageInput({
     setImages((prev) => prev.filter((img) => img.id !== id));
   }, []);
 
+  // Initialize committed text when recording starts
+  const handleRecordingStart = useCallback(() => {
+    voiceCommittedTextRef.current = message.trim();
+  }, [message]);
+
+  // Handle voice transcription - properly handle interim vs final results
+  const handleVoiceTranscript = useCallback((text: string, isFinal: boolean) => {
+    const committed = voiceCommittedTextRef.current;
+
+    if (isFinal) {
+      // Final result: commit the text and update the ref
+      const newCommitted = committed ? `${committed} ${text}` : text;
+      voiceCommittedTextRef.current = newCommitted;
+      setMessage(newCommitted);
+    } else {
+      // Interim result: show committed + interim (don't update ref)
+      const display = committed ? `${committed} ${text}` : text;
+      setMessage(display);
+    }
+  }, []);
+
   const handleSubmit = () => {
     // Block if no content or explicitly disabled
     if ((!message.trim() && images.length === 0) || disabled) return;
@@ -321,11 +359,7 @@ export const MessageInput = memo(function MessageInput({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Handle Escape to abort when busy
-    if (
-      e.key === "Escape" &&
-      !mentionState.isActive &&
-      !commandState.isActive
-    ) {
+    if (e.key === "Escape" && !mentionState.isActive && !commandState.isActive) {
       if (isBusy && onAbort) {
         e.preventDefault();
         onAbort();
@@ -334,12 +368,7 @@ export const MessageInput = memo(function MessageInput({
     }
 
     // Handle Tab to toggle mode (only when not in mention/command and not busy)
-    if (
-      e.key === "Tab" &&
-      !mentionState.isActive &&
-      !commandState.isActive &&
-      onToggleMode
-    ) {
+    if (e.key === "Tab" && !mentionState.isActive && !commandState.isActive && onToggleMode) {
       e.preventDefault();
       onToggleMode();
       return;
@@ -355,8 +384,7 @@ export const MessageInput = memo(function MessageInput({
         case "ArrowUp":
           e.preventDefault();
           setSelectedIndex(
-            (prev) =>
-              (prev - 1 + filteredCommands.length) % filteredCommands.length
+            (prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length
           );
           return;
         case "Enter":
@@ -447,11 +475,7 @@ export const MessageInput = memo(function MessageInput({
   return (
     <div className="bg-background p-4">
       {/* Image previews */}
-      <ImagePreviewGrid
-        images={images}
-        onRemove={removeImage}
-        onImageClick={setLightboxImage}
-      />
+      <ImagePreviewGrid images={images} onRemove={removeImage} onImageClick={setLightboxImage} />
 
       {/* Image Lightbox */}
       <ImageLightbox
@@ -492,6 +516,17 @@ export const MessageInput = memo(function MessageInput({
             rows={1}
           />
         </div>
+        {/* Voice input button - only show if enabled and API key is set */}
+        {isVoiceInputAvailable && (
+          <VoiceInputButton
+            ref={voiceInputRef}
+            apiKey={voiceInput.apiKey!}
+            language={voiceInput.language}
+            onTranscript={handleVoiceTranscript}
+            onRecordingStart={handleRecordingStart}
+            disabled={disabled}
+          />
+        )}
         {isBusy ? (
           <Tooltip>
             <TooltipTrigger
@@ -527,6 +562,7 @@ export const MessageInput = memo(function MessageInput({
         agentMode={agentMode}
         isBusy={isBusy ?? false}
         selectedModel={selectedModel ?? undefined}
+        voiceInputAvailable={isVoiceInputAvailable}
         onToggleMode={onToggleMode}
         onModelChange={setSelectedModel}
       />

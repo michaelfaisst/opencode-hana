@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Lightbulb, Hammer, HelpCircle } from "lucide-react";
+import { Image as ImageIcon, Lightbulb, Hammer, HelpCircle, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -10,6 +10,7 @@ interface InputControlsRowProps {
   agentMode: AgentMode;
   isBusy: boolean;
   selectedModel?: SelectedModel;
+  voiceInputAvailable?: boolean;
   onToggleMode?: () => void;
   onModelChange?: (model: SelectedModel) => void;
 }
@@ -18,6 +19,7 @@ export function InputControlsRow({
   agentMode,
   isBusy,
   selectedModel,
+  voiceInputAvailable,
   onToggleMode,
   onModelChange,
 }: InputControlsRowProps) {
@@ -51,9 +53,7 @@ export function InputControlsRow({
               </Button>
             }
           />
-          <TooltipContent>
-            Current mode: {agentMode}. Press Tab to switch.
-          </TooltipContent>
+          <TooltipContent>Current mode: {agentMode}. Press Tab to switch.</TooltipContent>
         </Tooltip>
       )}
 
@@ -71,21 +71,27 @@ export function InputControlsRow({
       <div className="flex-1" />
 
       {/* Desktop: Inline hints */}
-      <InputHints className="hidden xl:flex" />
+      <InputHints className="hidden xl:flex" voiceInputAvailable={voiceInputAvailable} />
 
       {/* Mobile/Tablet: Help icon with popover */}
-      <InputHintsPopover className="xl:hidden" />
+      <InputHintsPopover className="xl:hidden" voiceInputAvailable={voiceInputAvailable} />
     </div>
   );
 }
 
 interface InputHintsProps {
   className?: string;
+  voiceInputAvailable?: boolean;
 }
 
-function InputHints({ className }: InputHintsProps) {
+function InputHints({ className, voiceInputAvailable }: InputHintsProps) {
   return (
-    <div className={cn("items-center gap-2 text-xs text-muted-foreground whitespace-nowrap flex-shrink-0", className)}>
+    <div
+      className={cn(
+        "items-center gap-2 text-xs text-muted-foreground whitespace-nowrap flex-shrink-0",
+        className
+      )}
+    >
       <span>/ commands</span>
       <span className="text-muted-foreground/50">·</span>
       <span>@ files</span>
@@ -100,15 +106,25 @@ function InputHints({ className }: InputHintsProps) {
         <ImageIcon className="h-3 w-3" />
         paste
       </span>
+      {voiceInputAvailable && (
+        <>
+          <span className="text-muted-foreground/50">·</span>
+          <span className="flex items-center gap-1">
+            <Mic className="h-3 w-3" />
+            Alt+Shift
+          </span>
+        </>
+      )}
     </div>
   );
 }
 
 interface InputHintsPopoverProps {
   className?: string;
+  voiceInputAvailable?: boolean;
 }
 
-function InputHintsPopover({ className }: InputHintsPopoverProps) {
+function InputHintsPopover({ className, voiceInputAvailable }: InputHintsPopoverProps) {
   return (
     <Popover>
       <PopoverTrigger
@@ -123,33 +139,38 @@ function InputHintsPopover({ className }: InputHintsPopoverProps) {
           </Button>
         }
       />
-      <PopoverContent 
-        side="top" 
-        align="end" 
-        className="w-auto"
-      >
+      <PopoverContent side="top" align="end" className="w-auto">
         <div className="space-y-2 text-xs">
           <div className="font-medium text-foreground mb-2">Keyboard shortcuts</div>
           <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
             <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">/</kbd>
             <span>Commands</span>
-            
+
             <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">@</kbd>
             <span>Mention files</span>
-            
+
             <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">Tab</kbd>
             <span>Toggle Plan/Build mode</span>
-            
+
             <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">↑ ↓</kbd>
             <span>Message history</span>
-            
+
             <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">Esc</kbd>
             <span>Cancel</span>
-            
+
             <span className="flex items-center gap-1">
               <ImageIcon className="h-3 w-3" />
             </span>
             <span>Paste images from clipboard</span>
+
+            {voiceInputAvailable && (
+              <>
+                <span className="flex items-center gap-1">
+                  <Mic className="h-3 w-3" />
+                </span>
+                <span>Alt+Shift for voice input</span>
+              </>
+            )}
           </div>
         </div>
       </PopoverContent>

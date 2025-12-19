@@ -112,18 +112,13 @@ export const FileContentViewer = memo(function FileContentViewer({
   if (!isFileContent && !forceHighlight) {
     return (
       <div className={cn("overflow-auto", className)} style={{ maxHeight }}>
-        <pre className="p-3 text-xs font-mono bg-background whitespace-pre-wrap">
-          {content}
-        </pre>
+        <pre className="p-3 text-xs font-mono bg-background whitespace-pre-wrap">{content}</pre>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn("overflow-auto rounded-b", className)}
-      style={{ maxHeight }}
-    >
+    <div className={cn("overflow-auto rounded-b", className)} style={{ maxHeight }}>
       <ShikiCodeBlock
         code={codeContent}
         language={language}

@@ -7,11 +7,7 @@ type OpencodeClient = typeof opencodeClient;
 const OpencodeContext = createContext<OpencodeClient | null>(null);
 
 export function OpencodeProvider({ children }: { children: ReactNode }) {
-  return (
-    <OpencodeContext.Provider value={opencodeClient}>
-      {children}
-    </OpencodeContext.Provider>
-  );
+  return <OpencodeContext.Provider value={opencodeClient}>{children}</OpencodeContext.Provider>;
 }
 
 export function useOpencodeClient() {

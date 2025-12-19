@@ -1,31 +1,28 @@
-import * as React from "react"
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
-import { cva, type VariantProps } from "class-variance-authority"
-import { XIcon } from "lucide-react"
+import * as React from "react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { cva, type VariantProps } from "class-variance-authority";
+import { XIcon } from "lucide-react";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 function Sheet({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="sheet" {...props} />
+  return <DialogPrimitive.Root data-slot="sheet" {...props} />;
 }
 
 function SheetTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="sheet-trigger" {...props} />
+  return <DialogPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
 function SheetClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="sheet-close" {...props} />
+  return <DialogPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
 function SheetPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal data-slot="sheet-portal" {...props} />
+  return <DialogPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
-function SheetOverlay({
-  className,
-  ...props
-}: DialogPrimitive.Backdrop.Props) {
+function SheetOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="sheet-overlay"
@@ -38,7 +35,7 @@ function SheetOverlay({
       )}
       {...props}
     />
-  )
+  );
 }
 
 const sheetVariants = cva(
@@ -58,12 +55,11 @@ const sheetVariants = cva(
       side: "right",
     },
   }
-)
+);
 
 interface SheetContentProps
-  extends DialogPrimitive.Popup.Props,
-    VariantProps<typeof sheetVariants> {
-  showCloseButton?: boolean
+  extends DialogPrimitive.Popup.Props, VariantProps<typeof sheetVariants> {
+  showCloseButton?: boolean;
 }
 
 function SheetContent({
@@ -85,13 +81,7 @@ function SheetContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="sheet-close"
-            render={
-              <Button
-                variant="ghost"
-                className="absolute right-4 top-4"
-                size="icon-sm"
-              />
-            }
+            render={<Button variant="ghost" className="absolute right-4 top-4" size="icon-sm" />}
           >
             <XIcon className="h-4 w-4" />
             <span className="sr-only">Close</span>
@@ -99,7 +89,7 @@ function SheetContent({
         )}
       </DialogPrimitive.Popup>
     </SheetPortal>
-  )
+  );
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -109,7 +99,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("flex flex-col space-y-2 p-4", className)}
       {...props}
     />
-  )
+  );
 }
 
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -119,7 +109,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("flex flex-col-reverse gap-2 p-4 sm:flex-row sm:justify-end", className)}
       {...props}
     />
-  )
+  );
 }
 
 function SheetTitle({ className, ...props }: DialogPrimitive.Title.Props) {
@@ -129,20 +119,17 @@ function SheetTitle({ className, ...props }: DialogPrimitive.Title.Props) {
       className={cn("text-lg font-semibold text-foreground", className)}
       {...props}
     />
-  )
+  );
 }
 
-function SheetDescription({
-  className,
-  ...props
-}: DialogPrimitive.Description.Props) {
+function SheetDescription({ className, ...props }: DialogPrimitive.Description.Props) {
   return (
     <DialogPrimitive.Description
       data-slot="sheet-description"
       className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -156,4 +143,4 @@ export {
   SheetFooter,
   SheetTitle,
   SheetDescription,
-}
+};

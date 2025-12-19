@@ -1,7 +1,7 @@
-import * as React from "react"
-import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area"
+import * as React from "react";
+import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 type ViewportRef = React.RefObject<HTMLDivElement | null> | ((node: HTMLDivElement | null) => void);
 
@@ -20,14 +20,17 @@ function ScrollArea({
   ...props
 }: ScrollAreaProps) {
   // Handle both RefObject and callback ref
-  const handleRef = React.useCallback((node: HTMLDivElement | null) => {
-    if (typeof viewportRef === 'function') {
-      viewportRef(node);
-    } else if (viewportRef && 'current' in viewportRef) {
-      // Use Object.assign to avoid direct mutation lint error
-      Object.assign(viewportRef, { current: node });
-    }
-  }, [viewportRef]);
+  const handleRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (typeof viewportRef === "function") {
+        viewportRef(node);
+      } else if (viewportRef && "current" in viewportRef) {
+        // Use Object.assign to avoid direct mutation lint error
+        Object.assign(viewportRef, { current: node });
+      }
+    },
+    [viewportRef]
+  );
 
   return (
     <ScrollAreaPrimitive.Root
@@ -49,7 +52,7 @@ function ScrollArea({
       <ScrollBar />
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
-  )
+  );
 }
 
 function ScrollBar({
@@ -75,7 +78,7 @@ function ScrollBar({
         className="rounded-full bg-border relative flex-1"
       />
     </ScrollAreaPrimitive.Scrollbar>
-  )
+  );
 }
 
-export { ScrollArea, ScrollBar }
+export { ScrollArea, ScrollBar };

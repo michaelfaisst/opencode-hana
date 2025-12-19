@@ -2,11 +2,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { BundledTheme } from "shiki";
 
-export type Theme = 
-  | "dark" 
-  | "light" 
-  | "system" 
-  | "catppuccin-latte" 
+export type Theme =
+  | "dark"
+  | "light"
+  | "system"
+  | "catppuccin-latte"
   | "catppuccin-mocha"
   | "dracula"
   | "monokai"
@@ -23,20 +23,36 @@ export const THEMES: { value: Theme; label: string; description?: string }[] = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
   { value: "system", label: "System", description: "Follow system preference" },
-  { value: "catppuccin-latte", label: "Catppuccin Latte", description: "Soothing pastel light theme" },
-  { value: "catppuccin-mocha", label: "Catppuccin Mocha", description: "Soothing pastel dark theme" },
+  {
+    value: "catppuccin-latte",
+    label: "Catppuccin Latte",
+    description: "Soothing pastel light theme",
+  },
+  {
+    value: "catppuccin-mocha",
+    label: "Catppuccin Mocha",
+    description: "Soothing pastel dark theme",
+  },
   { value: "dracula", label: "Dracula", description: "Dark theme with vibrant colors" },
   { value: "monokai", label: "Monokai", description: "Classic dark editor theme" },
   { value: "nord", label: "Nord", description: "Arctic, north-bluish color palette" },
   { value: "one-dark", label: "One Dark", description: "Atom's iconic dark theme" },
-  { value: "synthwave-84", label: "Synthwave '84", description: "Retro-futuristic neon glow theme" },
-  { value: "tokyo-night", label: "Tokyo Night", description: "Clean dark theme inspired by Tokyo lights" },
+  {
+    value: "synthwave-84",
+    label: "Synthwave '84",
+    description: "Retro-futuristic neon glow theme",
+  },
+  {
+    value: "tokyo-night",
+    label: "Tokyo Night",
+    description: "Clean dark theme inspired by Tokyo lights",
+  },
 ];
 
 // All theme class names for removal
 const ALL_THEME_CLASSES: ResolvedTheme[] = [
   "light",
-  "dark", 
+  "dark",
   "catppuccin-latte",
   "catppuccin-mocha",
   "dracula",
@@ -49,13 +65,13 @@ const ALL_THEME_CLASSES: ResolvedTheme[] = [
 
 // Map app themes to Shiki syntax highlighting themes
 const SHIKI_THEME_MAP: Record<ResolvedTheme, BundledTheme> = {
-  "light": "github-light",
-  "dark": "github-dark",
+  light: "github-light",
+  dark: "github-dark",
   "catppuccin-latte": "catppuccin-latte",
   "catppuccin-mocha": "catppuccin-mocha",
-  "dracula": "dracula",
-  "monokai": "monokai",
-  "nord": "nord",
+  dracula: "dracula",
+  monokai: "monokai",
+  nord: "nord",
   "one-dark": "one-dark-pro",
   "synthwave-84": "synthwave-84",
   "tokyo-night": "tokyo-night",
@@ -70,9 +86,7 @@ export function getShikiTheme(resolvedTheme: ResolvedTheme): BundledTheme {
 
 function getSystemTheme(): "dark" | "light" {
   if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function resolveTheme(theme: Theme): ResolvedTheme {

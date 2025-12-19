@@ -36,12 +36,7 @@ interface ModelSelectorProps {
   className?: string;
 }
 
-export function ModelSelector({
-  value,
-  onChange,
-  disabled,
-  className,
-}: ModelSelectorProps) {
+export function ModelSelector({ value, onChange, disabled, className }: ModelSelectorProps) {
   const { data, isLoading } = useProviders();
   const [inputValue, setInputValue] = useState("");
 
@@ -80,13 +75,13 @@ export function ModelSelector({
   const filteredGroupedModels = useMemo(() => {
     const groups: Record<string, { providerName: string; models: ModelOption[] }> = {};
     const query = inputValue.toLowerCase().trim();
-    
+
     for (const model of allModels) {
       // Filter by search query - match against label (provider name + model name)
       if (query && !model.label.toLowerCase().includes(query)) {
         continue;
       }
-      
+
       if (!groups[model.providerID]) {
         groups[model.providerID] = {
           providerName: model.providerName,
@@ -108,9 +103,7 @@ export function ModelSelector({
   );
 
   // Get selected model value
-  const selectedValue = value
-    ? `${value.providerID}::${value.modelID}`
-    : "";
+  const selectedValue = value ? `${value.providerID}::${value.modelID}` : "";
 
   // Get selected model label
   const selectedLabel = useMemo(() => {
@@ -159,19 +152,14 @@ export function ModelSelector({
           <Bot className="h-4 w-4 text-muted-foreground" />
         </div>
         <ComboboxInput
-          className={cn(
-            "min-w-[280px] md:min-w-[320px] lg:min-w-[400px] pl-8",
-            className
-          )}
+          className={cn("min-w-[280px] md:min-w-[320px] lg:min-w-[400px] pl-8", className)}
           placeholder={selectedLabel || "Search models..."}
           disabled={disabled}
         />
       </div>
-      <ComboboxContent className="w-[var(--anchor-width)]">
+      <ComboboxContent className="w-[var(--anchor-width)]" side="top">
         <ComboboxList>
-          {filteredGroupedModels.length === 0 && (
-            <ComboboxEmpty>No models found</ComboboxEmpty>
-          )}
+          {filteredGroupedModels.length === 0 && <ComboboxEmpty>No models found</ComboboxEmpty>}
           {filteredGroupedModels.map(([providerID, group], index) => (
             <ComboboxGroup key={providerID}>
               <ComboboxLabel>{group.providerName}</ComboboxLabel>

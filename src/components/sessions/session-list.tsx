@@ -14,11 +14,7 @@ interface SessionListProps {
   onDeleteSession?: (id: string) => void;
 }
 
-export function SessionList({
-  sessions,
-  isLoading,
-  onDeleteSession,
-}: SessionListProps) {
+export function SessionList({ sessions, isLoading, onDeleteSession }: SessionListProps) {
   if (isLoading) {
     return (
       <div className="grid gap-3 p-4">
@@ -33,16 +29,14 @@ export function SessionList({
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
         <p className="text-muted-foreground">No sessions yet</p>
-        <p className="text-sm text-muted-foreground">
-          Create a new session to get started
-        </p>
+        <p className="text-sm text-muted-foreground">Create a new session to get started</p>
       </div>
     );
   }
 
   // Cast sessions to include optional timestamp fields from API response
   const sessionsWithTimestamps = sessions as SessionWithTimestamps[];
-  
+
   // Sort by most recent timestamp (createdAt or updatedAt, whichever is newer)
   const sortedSessions = [...sessionsWithTimestamps].sort((a, b) => {
     const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;

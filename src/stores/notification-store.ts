@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type NotificationSound = 
-  | "notification-1" 
-  | "notification-2" 
-  | "notification-3" 
+export type NotificationSound =
+  | "notification-1"
+  | "notification-2"
+  | "notification-3"
   | "notification-4";
 
 export interface NotificationSoundOption {
@@ -25,10 +25,10 @@ interface NotificationStore {
   browserNotificationsEnabled: boolean;
   soundEnabled: boolean;
   selectedSound: NotificationSound;
-  
+
   // Runtime state (not persisted)
   browserPermission: NotificationPermission;
-  
+
   // Actions
   setNotificationsEnabled: (enabled: boolean) => void;
   setBrowserNotificationsEnabled: (enabled: boolean) => void;
@@ -45,12 +45,10 @@ export const useNotificationStore = create<NotificationStore>()(
       browserNotificationsEnabled: true,
       soundEnabled: true,
       selectedSound: "notification-1",
-      
+
       // Runtime state
-      browserPermission: typeof Notification !== "undefined" 
-        ? Notification.permission 
-        : "denied",
-      
+      browserPermission: typeof Notification !== "undefined" ? Notification.permission : "denied",
+
       // Actions
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
       setBrowserNotificationsEnabled: (enabled) => set({ browserNotificationsEnabled: enabled }),

@@ -17,10 +17,7 @@ export function UnifiedDiffViewer({
   filePath,
   className,
 }: UnifiedDiffViewerProps) {
-  const diff = useMemo(
-    () => diffLines(oldString, newString),
-    [oldString, newString]
-  );
+  const diff = useMemo(() => diffLines(oldString, newString), [oldString, newString]);
   const language = useMemo(() => getLanguageFromPath(filePath), [filePath]);
 
   return (

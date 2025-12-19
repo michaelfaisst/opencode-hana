@@ -108,17 +108,16 @@ export function useSendMessage() {
       });
 
       // Snapshot the previous value
-      const previousMessages = queryClient.getQueryData(
-        QUERY_KEYS.messages(sessionId)
-      );
+      const previousMessages = queryClient.getQueryData(QUERY_KEYS.messages(sessionId));
 
       // Build optimistic message parts
-      const optimisticParts: Array<{ type: string; text?: string; mime?: string; url?: string }> = [];
-      
+      const optimisticParts: Array<{ type: string; text?: string; mime?: string; url?: string }> =
+        [];
+
       if (text.trim()) {
         optimisticParts.push({ type: "text", text });
       }
-      
+
       if (images && images.length > 0) {
         for (const image of images) {
           optimisticParts.push({

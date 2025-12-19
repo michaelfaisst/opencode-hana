@@ -1,11 +1,6 @@
 import { Link } from "react-router-dom";
 import { MessageSquare, Trash2, Folder } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getProjectName, getTimeAgo } from "@/lib/format";
@@ -18,13 +13,7 @@ interface SessionCardProps {
   onDelete?: (id: string) => void;
 }
 
-export function SessionCard({
-  id,
-  title,
-  directory,
-  updatedAt,
-  onDelete,
-}: SessionCardProps) {
+export function SessionCard({ id, title, directory, updatedAt, onDelete }: SessionCardProps) {
   const displayTitle = title || `Session ${id.slice(0, 8)}`;
   const projectName = directory ? getProjectName(directory) : null;
   const updatedDate = updatedAt ? new Date(updatedAt) : null;
@@ -37,9 +26,7 @@ export function SessionCard({
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium truncate">
-                {displayTitle}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">{displayTitle}</CardTitle>
             </div>
           </div>
           <CardDescription className="text-xs space-y-0.5">

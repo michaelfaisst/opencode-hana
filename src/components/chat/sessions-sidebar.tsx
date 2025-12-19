@@ -19,11 +19,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getProjectName, getTimeAgoShort } from "@/lib/format";
 import { useSessions, useCreateSession, useDeleteSession } from "@/hooks";
@@ -62,19 +58,23 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
   const deleteSession = useDeleteSession();
   const { sessionStatuses, isConnected } = useEventsContext();
 
+  // Extract OpenCode version from the first session (all sessions have the same version)
+  const opencodeVersion = useMemo(() => {
+    return sessions.length > 0 ? sessions[0].version : undefined;
+  }, [sessions]);
+
   // State for create session dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  
+
   // State for search
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // State for collapsed groups (stored by directory path)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Use Zustand store for collapsed state
-  const { sessionsSidebarCollapsed, toggleSessionsSidebar } =
-    useUILayoutStore();
-  
+  const { sessionsSidebarCollapsed, toggleSessionsSidebar } = useUILayoutStore();
+
   // When forceExpanded is true, always render expanded
   const isCollapsed = forceExpanded ? false : sessionsSidebarCollapsed;
 
@@ -90,7 +90,7 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
   // Filter sessions by search query
   const filteredSessions = useMemo(() => {
     if (!searchQuery.trim()) return sortedSessions;
-    
+
     const query = searchQuery.toLowerCase();
     return sortedSessions.filter((session) => {
       const title = (session.title || `Session ${session.id.slice(0, 8)}`).toLowerCase();
@@ -107,13 +107,11 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
     }
 
     const groups = new Map<string, SessionGroup>();
-    
+
     for (const session of filteredSessions) {
       const directory = session.directory || "__uncategorized__";
-      const projectName = session.directory 
-        ? getProjectName(session.directory) 
-        : "Uncategorized";
-      
+      const projectName = session.directory ? getProjectName(session.directory) : "Uncategorized";
+
       if (!groups.has(directory)) {
         groups.set(directory, {
           directory,
@@ -122,10 +120,10 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
           mostRecentUpdate: 0,
         });
       }
-      
+
       const group = groups.get(directory)!;
       group.sessions.push(session);
-      
+
       const updateTime = session.updatedAt ? new Date(session.updatedAt).getTime() : 0;
       if (updateTime > group.mostRecentUpdate) {
         group.mostRecentUpdate = updateTime;
@@ -173,11 +171,8 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
         // If we're deleting the current session, find another session to navigate to
         if (sessionId === currentSessionId) {
           // Find the next session to navigate to (prefer the one below, then above)
-          const currentIndex = sortedSessions.findIndex(
-            (s) => s.id === sessionId
-          );
-          const nextSession =
-            sortedSessions[currentIndex + 1] || sortedSessions[currentIndex - 1];
+          const currentIndex = sortedSessions.findIndex((s) => s.id === sessionId);
+          const nextSession = sortedSessions[currentIndex + 1] || sortedSessions[currentIndex - 1];
 
           await deleteSession.mutateAsync(sessionId);
 
@@ -215,17 +210,8 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
     >
       {/* Header */}
       <div className="flex items-center justify-between p-2 border-b border-border">
-        {!isCollapsed && (
-          <span className="text-sm font-medium text-foreground px-2">
-            Sessions
-          </span>
-        )}
-        <div
-          className={cn(
-            "flex items-center gap-1",
-            isCollapsed && "w-full justify-center"
-          )}
-        >
+        {!isCollapsed && <span className="text-sm font-medium text-foreground px-2">Sessions</span>}
+        <div className={cn("flex items-center gap-1", isCollapsed && "w-full justify-center")}>
           {!isCollapsed && (
             <Tooltip>
               <TooltipTrigger
@@ -320,20 +306,15 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
             {sortedSessions.slice(0, 10).map((session) => {
               const status = sessionStatuses.get(session.id);
               const isBusy = status?.type === "busy";
-              const displayTitle =
-                session.title || `Session ${session.id.slice(0, 8)}`;
-              const projectName = session.directory
-                ? getProjectName(session.directory)
-                : null;
+              const displayTitle = session.title || `Session ${session.id.slice(0, 8)}`;
+              const projectName = session.directory ? getProjectName(session.directory) : null;
               return (
                 <Tooltip key={session.id}>
                   <TooltipTrigger
                     render={(props) => (
                       <Button
                         {...props}
-                        variant={
-                          session.id === currentSessionId ? "secondary" : "ghost"
-                        }
+                        variant={session.id === currentSessionId ? "secondary" : "ghost"}
                         size="icon"
                         className="h-8 w-8 relative"
                         onClick={() => handleSessionClick(session.id)}
@@ -363,9 +344,7 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
           // Expanded view - grouped session list
           <div className="py-1">
             {isLoading ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                Loading...
-              </div>
+              <div className="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
             ) : filteredSessions.length === 0 ? (
               <div className="px-3 py-4 text-sm text-muted-foreground text-center">
                 {searchQuery ? "No matching sessions" : "No sessions yet"}
@@ -403,7 +382,7 @@ export function SessionsSidebar({ forceExpanded, onSessionSelect }: SessionsSide
 
       {/* Footer with connection status and version */}
       {!isCollapsed && (
-        <SidebarFooter isConnected={isConnected} />
+        <SidebarFooter isConnected={isConnected} opencodeVersion={opencodeVersion} />
       )}
 
       {/* Create session dialog */}
@@ -445,18 +424,12 @@ function SessionGroupComponent({
         onClick={onToggle}
         className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
       >
-        {isCollapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronDown className="h-3 w-3" />
-        )}
+        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         <Folder className="h-3 w-3" />
         <span className="truncate flex-1 text-left">{group.projectName}</span>
-        <span className="text-[10px] text-muted-foreground/70">
-          {group.sessions.length}
-        </span>
+        <span className="text-[10px] text-muted-foreground/70">{group.sessions.length}</span>
       </button>
-      
+
       {/* Sessions in group */}
       {!isCollapsed && (
         <div className="ml-2">
@@ -487,18 +460,9 @@ interface SessionItemProps {
   compact?: boolean;
 }
 
-function SessionItem({
-  session,
-  isActive,
-  isBusy,
-  onClick,
-  onDelete,
-  compact,
-}: SessionItemProps) {
+function SessionItem({ session, isActive, isBusy, onClick, onDelete, compact }: SessionItemProps) {
   const displayTitle = session.title || `Session ${session.id.slice(0, 8)}`;
-  const projectName = session.directory
-    ? getProjectName(session.directory)
-    : null;
+  const projectName = session.directory ? getProjectName(session.directory) : null;
   const updatedDate = session.updatedAt ? new Date(session.updatedAt) : null;
   const timeAgo = updatedDate ? getTimeAgoShort(updatedDate) : null;
 
@@ -531,9 +495,7 @@ function SessionItem({
           </div>
         )}
         {compact && timeAgo && (
-          <div className="text-xs text-muted-foreground truncate">
-            {timeAgo}
-          </div>
+          <div className="text-xs text-muted-foreground truncate">{timeAgo}</div>
         )}
       </div>
       <Button
@@ -555,27 +517,26 @@ function SessionItem({
 // Sidebar footer with connection status and version info
 interface SidebarFooterProps {
   isConnected: boolean;
+  opencodeVersion?: string;
 }
 
-function SidebarFooter({ isConnected }: SidebarFooterProps) {
+function SidebarFooter({ isConnected, opencodeVersion }: SidebarFooterProps) {
   const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "localhost:4096";
   // Extract just the host part for display
   const displayUrl = serverUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
-  
+
   return (
     <div className="border-t border-border p-2 space-y-2">
       {/* Connection status */}
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1.5">
-          <Circle 
+          <Circle
             className={cn(
               "h-2 w-2 fill-current",
               isConnected ? "text-green-500" : "text-destructive"
-            )} 
+            )}
           />
-          <span className={cn(
-            isConnected ? "text-green-500" : "text-destructive"
-          )}>
+          <span className={cn(isConnected ? "text-green-500" : "text-destructive")}>
             {isConnected ? "Connected" : "Disconnected"}
           </span>
         </div>
@@ -592,7 +553,7 @@ function SidebarFooter({ isConnected }: SidebarFooterProps) {
           <TooltipContent>Settings</TooltipContent>
         </Tooltip>
       </div>
-      
+
       {/* Server URL and versions */}
       <div className="text-[10px] text-muted-foreground space-y-0.5">
         <div className="truncate" title={serverUrl}>
@@ -600,6 +561,7 @@ function SidebarFooter({ isConnected }: SidebarFooterProps) {
         </div>
         <div className="flex items-center gap-2">
           <span>Hana v{__APP_VERSION__}</span>
+          {opencodeVersion && <span>OpenCode v{opencodeVersion}</span>}
         </div>
       </div>
     </div>

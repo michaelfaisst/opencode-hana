@@ -20,25 +20,28 @@ export interface EventsHookResult {
 // Trailing throttle - ensures a final call after the delay
 // This is important for streaming: we want updates during streaming AND a final update
 function createTrailingThrottle(delay: number) {
-  const state = new Map<string, { timeout: ReturnType<typeof setTimeout> | null; pending: boolean }>();
-  
+  const state = new Map<
+    string,
+    { timeout: ReturnType<typeof setTimeout> | null; pending: boolean }
+  >();
+
   return (key: string, fn: () => void) => {
     let entry = state.get(key);
-    
+
     if (!entry) {
       entry = { timeout: null, pending: false };
       state.set(key, entry);
     }
-    
+
     // If we're in the cooldown period, mark as pending
     if (entry.timeout) {
       entry.pending = true;
       return;
     }
-    
+
     // Execute immediately
     fn();
-    
+
     // Set cooldown
     entry.timeout = setTimeout(() => {
       const e = state.get(key);
@@ -81,7 +84,7 @@ export function useEvents(): EventsHookResult {
   const handleEvent = useCallback((event: Event) => {
     const qc = queryClientRef.current;
     const throttle = messageThrottleRef.current;
-    
+
     switch (event.type) {
       // Session events
       case "session.created":
@@ -143,10 +146,7 @@ export function useEvents(): EventsHookResult {
         if ("sessionID" in event.properties && "status" in event.properties) {
           setState((prev) => {
             const newStatuses = new Map(prev.sessionStatuses);
-            newStatuses.set(
-              event.properties.sessionID,
-              event.properties.status
-            );
+            newStatuses.set(event.properties.sessionID, event.properties.status);
             return { ...prev, sessionStatuses: newStatuses };
           });
         }
@@ -186,7 +186,7 @@ export function useEvents(): EventsHookResult {
         break;
 
       default:
-        // Unhandled events are silently ignored
+      // Unhandled events are silently ignored
     }
   }, []);
 
@@ -196,7 +196,7 @@ export function useEvents(): EventsHookResult {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
-    
+
     // Close existing connection
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -226,11 +226,11 @@ export function useEvents(): EventsHookResult {
     eventSource.onerror = (error) => {
       console.error("[Events] Connection error:", error);
       setState((prev) => ({ ...prev, isConnected: false }));
-      
+
       // Close the connection
       eventSource.close();
       eventSourceRef.current = null;
-      
+
       // Auto-reconnect after 3 seconds
       reconnectTimeoutRef.current = setTimeout(() => {
         connect();

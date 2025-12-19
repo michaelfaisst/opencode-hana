@@ -32,11 +32,11 @@ const THEME_COLORS: Record<Theme, { bg: string; accent: string }> = {
 function ThemeSwatch({ themeValue }: { themeValue: Theme }) {
   const colors = THEME_COLORS[themeValue];
   const isGradient = colors.bg.startsWith("linear-gradient");
-  
+
   return (
-    <span 
+    <span
       className="h-4 w-4 rounded-full border border-border shrink-0"
-      style={{ 
+      style={{
         background: isGradient ? colors.bg : colors.bg,
         boxShadow: `inset 0 0 0 2px ${colors.accent}`,
       }}
@@ -46,18 +46,23 @@ function ThemeSwatch({ themeValue }: { themeValue: Theme }) {
 
 function Logo({ className }: { className?: string }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
-      className={className}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={className}>
       <g className="fill-pink-500 dark:fill-pink-400">
         {/* Petals at 0°, 72°, 144°, 216°, 288° */}
         <path d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z" />
         <path d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z" transform="rotate(72 50 50)" />
-        <path d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z" transform="rotate(144 50 50)" />
-        <path d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z" transform="rotate(216 50 50)" />
-        <path d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z" transform="rotate(288 50 50)" />
+        <path
+          d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z"
+          transform="rotate(144 50 50)"
+        />
+        <path
+          d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z"
+          transform="rotate(216 50 50)"
+        />
+        <path
+          d="M50 10 C42 26, 42 40, 50 48 C58 40, 58 26, 50 10 Z"
+          transform="rotate(288 50 50)"
+        />
         {/* Center */}
         <circle cx="50" cy="50" r="6" />
       </g>
@@ -74,10 +79,10 @@ interface HeaderProps {
   onOpenMobileChatSheet?: () => void;
 }
 
-export function Header({ 
-  title, 
-  sessionTitle, 
-  children, 
+export function Header({
+  title,
+  sessionTitle,
+  children,
   leftContent,
   onOpenMobileSessionsSheet,
   onOpenMobileChatSheet,
@@ -90,9 +95,9 @@ export function Header({
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {/* Mobile hamburger menu - visible on < lg */}
           {onOpenMobileSessionsSheet && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-9 w-9 lg:hidden"
               onClick={onOpenMobileSessionsSheet}
             >
@@ -107,7 +112,9 @@ export function Header({
           {sessionTitle && (
             <>
               <span className="text-muted-foreground shrink-0 hidden sm:inline">/</span>
-              <span className="text-sm text-muted-foreground truncate hidden sm:inline">{sessionTitle}</span>
+              <span className="text-sm text-muted-foreground truncate hidden sm:inline">
+                {sessionTitle}
+              </span>
             </>
           )}
         </div>
@@ -161,9 +168,9 @@ export function Header({
           </DropdownMenu>
           {/* Mobile chat sidebar toggle - visible on < lg */}
           {onOpenMobileChatSheet && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-9 w-9 lg:hidden"
               onClick={onOpenMobileChatSheet}
             >

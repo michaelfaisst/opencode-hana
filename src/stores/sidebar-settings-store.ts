@@ -42,9 +42,7 @@ export const useSidebarSettingsStore = create<SidebarSettingsStore>()(
       toggleSection: (sectionId) =>
         set((state) => ({
           sections: state.sections.map((section) =>
-            section.id === sectionId
-              ? { ...section, enabled: !section.enabled }
-              : section
+            section.id === sectionId ? { ...section, enabled: !section.enabled } : section
           ),
         })),
 
@@ -69,9 +67,7 @@ export const useSidebarSettingsStore = create<SidebarSettingsStore>()(
 
         // Merge with defaults to handle new sections
         const mergedSections = DEFAULT_SECTIONS.map((defaultSection) => {
-          const storedSection = persistedState.sections!.find(
-            (s) => s.id === defaultSection.id
-          );
+          const storedSection = persistedState.sections!.find((s) => s.id === defaultSection.id);
           return storedSection ?? defaultSection;
         });
 

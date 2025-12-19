@@ -88,33 +88,25 @@ export function ChatSidebar({
 
       // Check if this message has any todowrite calls
       for (const part of message.parts) {
-        if (
-          part.type === "tool" &&
-          part.tool === "todowrite" &&
-          part.state?.input?.todos
-        ) {
+        if (part.type === "tool" && part.tool === "todowrite" && part.state?.input?.todos) {
           // Found todos in this message - merge by ID within this message
           // (in case there are multiple todowrite calls in one message)
           const todosById = new Map<string, TodoItem>();
-          
+
           // Continue scanning this message for all todowrite calls
           for (const p of message.parts) {
-            if (
-              p.type === "tool" &&
-              p.tool === "todowrite" &&
-              p.state?.input?.todos
-            ) {
+            if (p.type === "tool" && p.tool === "todowrite" && p.state?.input?.todos) {
               for (const todo of p.state.input.todos) {
                 todosById.set(todo.id, todo);
               }
             }
           }
-          
+
           latestTodos = Array.from(todosById.values());
           break;
         }
       }
-      
+
       // If we found todos, stop searching older messages
       if (latestTodos.length > 0) break;
     }
@@ -190,9 +182,7 @@ export function ChatSidebar({
           const command = state.input.command as string | undefined;
           if (command && (command.includes("rm ") || command.includes("rm\t"))) {
             // Try to extract file path from rm command - basic detection
-            const rmMatch = command.match(
-              /rm\s+(?:-[rf]+\s+)?["']?([^\s"']+)["']?/
-            );
+            const rmMatch = command.match(/rm\s+(?:-[rf]+\s+)?["']?([^\s"']+)["']?/);
             if (rmMatch && rmMatch[1]) {
               const filePath = rmMatch[1];
               filesMap.set(filePath, {
@@ -231,8 +221,7 @@ export function ChatSidebar({
         }
         // Track the context tokens (input + cache.read) from the last message with tokens
         if (message.tokens) {
-          const contextTokens =
-            message.tokens.input + (message.tokens.cache?.read || 0);
+          const contextTokens = message.tokens.input + (message.tokens.cache?.read || 0);
           if (contextTokens > 0) {
             currentContextTokens = contextTokens;
           }
@@ -302,11 +291,7 @@ export function ChatSidebar({
         return <SidebarChangedFiles key="changed-files" files={changedFiles} />;
       case "mcp-servers":
         return (
-          <SidebarMcpServers
-            key="mcp-servers"
-            servers={mcpServers}
-            isLoading={isMcpLoading}
-          />
+          <SidebarMcpServers key="mcp-servers" servers={mcpServers} isLoading={isMcpLoading} />
         );
       case "tasks":
         return <SidebarTasks key="tasks" todos={todos} />;
@@ -328,12 +313,7 @@ export function ChatSidebar({
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleChatSidebar}
-                  className="h-6 w-6"
-                >
+                <Button variant="ghost" size="icon" onClick={toggleChatSidebar} className="h-6 w-6">
                   <PanelRightClose className="h-4 w-4" />
                 </Button>
               }
@@ -354,9 +334,7 @@ export function ChatSidebar({
     >
       {/* Header with collapse and settings buttons */}
       <div className="flex items-center justify-between p-2 border-b border-border">
-        <span className="text-xs font-medium text-muted-foreground px-2">
-          Sidebar
-        </span>
+        <span className="text-xs font-medium text-muted-foreground px-2">Sidebar</span>
         <div className="flex items-center gap-1">
           <SidebarSettingsDialog />
           {/* Hide collapse toggle when forceExpanded */}
@@ -383,9 +361,7 @@ export function ChatSidebar({
       {/* Scrollable content area */}
       <ScrollArea className="flex-1 min-h-0">
         {/* Render sections based on settings */}
-        {sections
-          .filter((section) => section.enabled)
-          .map((section) => renderSection(section.id))}
+        {sections.filter((section) => section.enabled).map((section) => renderSection(section.id))}
       </ScrollArea>
     </div>
   );

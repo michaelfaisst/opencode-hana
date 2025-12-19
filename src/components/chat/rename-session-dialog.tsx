@@ -65,9 +65,7 @@ export function RenameSessionDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Rename Session</DialogTitle>
-            <DialogDescription>
-              Enter a new name for this session.
-            </DialogDescription>
+            <DialogDescription>Enter a new name for this session.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-2">

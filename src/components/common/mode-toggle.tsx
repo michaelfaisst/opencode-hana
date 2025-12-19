@@ -37,9 +37,7 @@ export function ModeToggle({ className, disabled }: ModeToggleProps) {
           </Button>
         }
       />
-      <TooltipContent>
-        Current mode: {agentMode}. Click to switch.
-      </TooltipContent>
+      <TooltipContent>Current mode: {agentMode}. Click to switch.</TooltipContent>
     </Tooltip>
   );
 }

@@ -8,10 +8,7 @@ interface SidebarContextUsageProps {
   contextLimit: number | undefined;
 }
 
-export function SidebarContextUsage({
-  contextUsage,
-  contextLimit,
-}: SidebarContextUsageProps) {
+export function SidebarContextUsage({ contextUsage, contextLimit }: SidebarContextUsageProps) {
   const badge = contextUsage ? (
     <span
       className={cn(

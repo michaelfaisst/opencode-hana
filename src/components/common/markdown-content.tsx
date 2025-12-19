@@ -14,25 +14,20 @@ export const MarkdownContent = memo(function MarkdownContent({
   className,
 }: MarkdownContentProps) {
   return (
-    <div
-      className={cn("prose prose-sm dark:prose-invert max-w-none", className)}
-    >
+    <div className={cn("prose prose-sm dark:prose-invert max-w-none", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           code({ className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || "");
             const codeString = String(children);
-            
+
             // Inline code: no language AND no newlines
-            const isInline = !match && !codeString.includes('\n');
+            const isInline = !match && !codeString.includes("\n");
 
             if (isInline) {
               return (
-                <code
-                  className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono"
-                  {...props}
-                >
+                <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono" {...props}>
                   {children}
                 </code>
               );
