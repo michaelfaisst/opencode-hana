@@ -7,20 +7,23 @@ import { EventsProvider } from "./events-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function AppProviders({ children }: { children: ReactNode }) {
-  return (
-    <ThemeProvider>
-      <QueryProvider>
-        <OpencodeProvider>
-          <EventsProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-          </EventsProvider>
-        </OpencodeProvider>
-      </QueryProvider>
-    </ThemeProvider>
-  );
+    return (
+        <ThemeProvider>
+            <QueryProvider>
+                <OpencodeProvider>
+                    <EventsProvider>
+                        <TooltipProvider>{children}</TooltipProvider>
+                    </EventsProvider>
+                </OpencodeProvider>
+            </QueryProvider>
+        </ThemeProvider>
+    );
 }
 
 export { useOpencodeClient } from "./opencode-provider";
 export { useTheme } from "./theme-provider";
 export { queryClient } from "./query-provider";
-export { useEventsContext, useSessionStatusFromContext } from "./events-provider";
+export {
+    useEventsContext,
+    useSessionStatusFromContext
+} from "./events-provider";
