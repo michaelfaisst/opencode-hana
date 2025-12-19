@@ -2,8 +2,8 @@ import { memo } from "react";
 import { ShikiInlineCode } from "@/components/common/shiki-code";
 
 interface HighlightedLineProps {
-  code: string;
-  language: string;
+    code: string;
+    language: string;
 }
 
 /**
@@ -12,8 +12,8 @@ interface HighlightedLineProps {
  * Memoized to prevent unnecessary re-renders.
  */
 export const HighlightedLine = memo(function HighlightedLine({
-  code,
-  language,
+    code,
+    language
 }: HighlightedLineProps) {
-  return <ShikiInlineCode code={code || " "} language={language} />;
+    return <ShikiInlineCode code={code || " "} language={language} />;
 });

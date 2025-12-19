@@ -12,44 +12,44 @@ export type { LiveClient, ListenLiveClient };
  * Configuration options for Deepgram live transcription
  */
 export interface DeepgramLiveConfig {
-  model?: string;
-  language?: string;
-  smart_format?: boolean;
-  interim_results?: boolean;
-  utterance_end_ms?: number;
-  vad_events?: boolean;
-  endpointing?: number | false;
+    model?: string;
+    language?: string;
+    smart_format?: boolean;
+    interim_results?: boolean;
+    utterance_end_ms?: number;
+    vad_events?: boolean;
+    endpointing?: number | false;
 }
 
 /**
  * Default configuration for live transcription
  */
 export const DEFAULT_LIVE_CONFIG: DeepgramLiveConfig = {
-  model: "nova-2",
-  language: "en-US",
-  smart_format: true,
-  interim_results: true,
-  utterance_end_ms: 1000,
-  vad_events: true,
-  endpointing: 300,
+    model: "nova-2",
+    language: "en-US",
+    smart_format: true,
+    interim_results: true,
+    utterance_end_ms: 1000,
+    vad_events: true,
+    endpointing: 300
 };
 
 /**
  * Create a Deepgram client instance
  */
 export function createDeepgramClient(apiKey: string) {
-  return createClient(apiKey);
+    return createClient(apiKey);
 }
 
 /**
  * Create a live transcription connection
  */
 export function createLiveConnection(
-  apiKey: string,
-  config: DeepgramLiveConfig = {}
+    apiKey: string,
+    config: DeepgramLiveConfig = {}
 ): ListenLiveClient {
-  const client = createDeepgramClient(apiKey);
-  const mergedConfig = { ...DEFAULT_LIVE_CONFIG, ...config };
+    const client = createDeepgramClient(apiKey);
+    const mergedConfig = { ...DEFAULT_LIVE_CONFIG, ...config };
 
-  return client.listen.live(mergedConfig);
+    return client.listen.live(mergedConfig);
 }

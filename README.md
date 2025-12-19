@@ -19,9 +19,9 @@ A mobile-friendly web UI to interact with the OpenCode server.
 
 1. **OpenCode Server**: Make sure you have OpenCode running:
 
-   ```bash
-   opencode serve --port 4096
-   ```
+    ```bash
+    opencode serve --port 4096
+    ```
 
 2. **Bun**: This project uses [Bun](https://bun.sh) as the runtime.
 

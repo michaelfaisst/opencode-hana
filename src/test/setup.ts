@@ -13,55 +13,55 @@ afterAll(() => server.close());
 
 // Mock localStorage
 const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
+    let store: Record<string, string> = {};
+    return {
+        getItem: (key: string) => store[key] || null,
+        setItem: (key: string, value: string) => {
+            store[key] = value.toString();
+        },
+        removeItem: (key: string) => {
+            delete store[key];
+        },
+        clear: () => {
+            store = {};
+        }
+    };
 })();
 
 Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
+    value: localStorageMock
 });
 
 // Mock matchMedia
 Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }),
+    writable: true,
+    value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false
+    })
 });
 
 // Mock Notification API
 Object.defineProperty(window, "Notification", {
-  value: {
-    permission: "denied",
-    requestPermission: () => Promise.resolve("denied"),
-  },
+    value: {
+        permission: "denied",
+        requestPermission: () => Promise.resolve("denied")
+    }
 });
 
 // Mock ResizeObserver
 class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+    observe() {}
+    unobserve() {}
+    disconnect() {}
 }
 
 Object.defineProperty(window, "ResizeObserver", {
-  value: ResizeObserverMock,
+    value: ResizeObserverMock
 });

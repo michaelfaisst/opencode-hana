@@ -5,7 +5,7 @@ import { createOpencodeClient } from "@opencode-ai/sdk/client";
 const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "";
 
 export const opencodeClient = createOpencodeClient({
-  baseUrl: serverUrl,
+    baseUrl: serverUrl
 });
 
 export type { Session, Message, Part } from "@opencode-ai/sdk/client";
