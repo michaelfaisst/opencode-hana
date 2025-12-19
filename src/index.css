@@ -62,7 +62,7 @@
     html,
     body,
     #root {
-        @apply h-full;
+        @apply h-full overflow-hidden;
     }
     button,
     [role="button"] {
@@ -119,6 +119,15 @@
 
 .custom-scrollbar::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+/* Hide scrollbar for horizontal scroll areas */
+.scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 /* Message appear animation */

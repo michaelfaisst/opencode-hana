@@ -2,10 +2,22 @@ import { toast } from "sonner";
 import { useNotificationStore, type NotificationSound } from "@/stores";
 
 /**
+ * Safely check if Notification API is available
+ * On iOS Safari, accessing Notification throws a ReferenceError
+ */
+function isNotificationSupported(): boolean {
+    try {
+        return typeof window !== "undefined" && "Notification" in window;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Request browser notification permission
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
-    if (typeof Notification === "undefined") {
+    if (!isNotificationSupported()) {
         return "denied";
     }
 
@@ -26,7 +38,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
  * Get current browser notification permission
  */
 export function getBrowserNotificationPermission(): NotificationPermission {
-    if (typeof Notification === "undefined") {
+    if (!isNotificationSupported()) {
         return "denied";
     }
     return Notification.permission;
@@ -76,6 +88,7 @@ export function sendCompletionNotification(
 
     // Try browser notification if enabled
     if (
+        isNotificationSupported() &&
         state.browserNotificationsEnabled &&
         Notification.permission === "granted"
     ) {
@@ -108,7 +121,7 @@ export function sendCompletionNotification(
  * Check if we should show the permission request button
  */
 export function shouldShowPermissionRequest(): boolean {
-    if (typeof Notification === "undefined") {
+    if (!isNotificationSupported()) {
         return false;
     }
     return Notification.permission === "default";

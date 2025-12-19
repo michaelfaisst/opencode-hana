@@ -19,6 +19,21 @@ export const NOTIFICATION_SOUNDS: NotificationSoundOption[] = [
     { id: "notification-4", label: "Notification 4" }
 ];
 
+/**
+ * Safely get the initial browser permission
+ * On iOS Safari, accessing Notification throws a ReferenceError
+ */
+function getInitialBrowserPermission(): NotificationPermission {
+    try {
+        if (typeof window !== "undefined" && "Notification" in window) {
+            return Notification.permission;
+        }
+    } catch {
+        // Notification API not available (e.g., iOS Safari)
+    }
+    return "denied";
+}
+
 interface NotificationStore {
     // Settings (persisted)
     notificationsEnabled: boolean;
@@ -47,10 +62,7 @@ export const useNotificationStore = create<NotificationStore>()(
             selectedSound: "notification-1",
 
             // Runtime state
-            browserPermission:
-                typeof Notification !== "undefined"
-                    ? Notification.permission
-                    : "denied",
+            browserPermission: getInitialBrowserPermission(),
 
             // Actions
             setNotificationsEnabled: (enabled) =>

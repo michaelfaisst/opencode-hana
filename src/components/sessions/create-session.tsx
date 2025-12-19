@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
     Combobox,
-    ComboboxInput,
+    ComboboxSelectTrigger,
+    ComboboxPopupInput,
     ComboboxContent,
     ComboboxList,
     ComboboxItem,
-    ComboboxEmpty
+    ComboboxEmpty,
+    ComboboxValue
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +67,13 @@ export function CreateSessionDialog({
         }
     };
 
+    // Clear search when combobox popup opens
+    const handleComboboxOpenChange = (open: boolean) => {
+        if (open) {
+            setInputValue("");
+        }
+    };
+
     // Build options for the combobox
     const projectOptions = useMemo(() => {
         if (!projects) return [];
@@ -94,13 +103,6 @@ export function CreateSessionDialog({
         },
         [projectOptions]
     );
-
-    // Get selected project label for placeholder
-    const selectedProjectLabel = useMemo(() => {
-        if (!selectedProject) return "";
-        const project = projectOptions.find((p) => p.value === selectedProject);
-        return project?.label ?? "";
-    }, [selectedProject, projectOptions]);
 
     const handleCreate = () => {
         if (!selectedProject) return;
@@ -145,26 +147,33 @@ export function CreateSessionDialog({
                             }
                             inputValue={inputValue}
                             onInputValueChange={setInputValue}
+                            onOpenChange={handleComboboxOpenChange}
                             disabled={isLoadingProjects}
                             itemToStringLabel={itemToStringLabel}
                         >
-                            <div className="relative">
-                                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <Folder className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <ComboboxInput
-                                    id="session-project"
-                                    className="w-full pl-8"
-                                    placeholder={
+                            <ComboboxSelectTrigger
+                                id="session-project"
+                                className="w-full"
+                                disabled={isLoadingProjects}
+                            >
+                                <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <ComboboxValue>
+                                    {(val) =>
                                         isLoadingProjects
                                             ? "Loading projects..."
-                                            : selectedProjectLabel ||
-                                              "Select a project..."
+                                            : val
+                                              ? itemToStringLabel(val as string)
+                                              : "Select a project..."
                                     }
-                                    disabled={isLoadingProjects}
-                                />
-                            </div>
+                                </ComboboxValue>
+                            </ComboboxSelectTrigger>
                             <ComboboxContent className="w-[var(--anchor-width)]">
+                                <div className="p-1 border-b border-border">
+                                    <ComboboxPopupInput
+                                        placeholder="Search projects..."
+                                        autoFocus
+                                    />
+                                </div>
                                 <ComboboxList>
                                     {filteredProjects.length === 0 && (
                                         <ComboboxEmpty>

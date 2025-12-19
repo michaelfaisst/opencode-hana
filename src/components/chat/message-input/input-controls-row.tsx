@@ -1,21 +1,11 @@
-import {
-    Image as ImageIcon,
-    Lightbulb,
-    Hammer,
-    HelpCircle,
-    Mic
-} from "lucide-react";
+import { type ReactNode } from "react";
+import { Image as ImageIcon, Lightbulb, Hammer, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Tooltip,
     TooltipTrigger,
     TooltipContent
 } from "@/components/ui/tooltip";
-import {
-    Popover,
-    PopoverTrigger,
-    PopoverContent
-} from "@/components/ui/popover";
 import { ModelSelector, type SelectedModel } from "@/components/common";
 import { cn } from "@/lib/utils";
 import type { AgentMode } from "@/stores";
@@ -38,64 +28,67 @@ export function InputControlsRow({
     onModelChange
 }: InputControlsRowProps) {
     return (
-        <div className="mt-3 flex items-center gap-2 overflow-hidden">
-            {/* Mode toggle button */}
-            {onToggleMode && (
-                <Tooltip>
-                    <TooltipTrigger
-                        render={
-                            <Button
-                                variant="outline"
-                                onClick={onToggleMode}
-                                disabled={isBusy}
-                                className={cn(
-                                    "gap-1.5 text-xs w-20",
-                                    agentMode === "plan"
-                                        ? "border-amber-500/50"
-                                        : "border-blue-500/50"
-                                )}
-                            >
-                                {agentMode === "plan" ? (
-                                    <>
-                                        <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
-                                        <span>Plan</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Hammer className="h-3.5 w-3.5 text-blue-500" />
-                                        <span>Build</span>
-                                    </>
-                                )}
-                            </Button>
-                        }
+        <div className="mt-3 space-y-2">
+            {/* Row 1: Mode toggle + Model selector + Desktop hints */}
+            <div className="flex items-center gap-2 overflow-hidden">
+                {/* Mode toggle button */}
+                {onToggleMode && (
+                    <Tooltip>
+                        <TooltipTrigger
+                            render={
+                                <Button
+                                    variant="outline"
+                                    onClick={onToggleMode}
+                                    disabled={isBusy}
+                                    className={cn(
+                                        "gap-1.5 text-xs w-20 shrink-0",
+                                        agentMode === "plan"
+                                            ? "border-amber-500/50"
+                                            : "border-blue-500/50"
+                                    )}
+                                >
+                                    {agentMode === "plan" ? (
+                                        <>
+                                            <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                                            <span>Plan</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Hammer className="h-3.5 w-3.5 text-blue-500" />
+                                            <span>Build</span>
+                                        </>
+                                    )}
+                                </Button>
+                            }
+                        />
+                        <TooltipContent>
+                            Current mode: {agentMode}. Press Tab to switch.
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+
+                {/* Model selector */}
+                {selectedModel && onModelChange && (
+                    <ModelSelector
+                        value={selectedModel}
+                        onChange={onModelChange}
+                        disabled={isBusy}
+                        className="flex-1 xl:flex-none"
                     />
-                    <TooltipContent>
-                        Current mode: {agentMode}. Press Tab to switch.
-                    </TooltipContent>
-                </Tooltip>
-            )}
+                )}
 
-            {/* Model selector */}
-            {selectedModel && onModelChange && (
-                <ModelSelector
-                    value={selectedModel}
-                    onChange={onModelChange}
-                    disabled={isBusy}
-                    className="flex-1 sm:flex-none"
+                {/* Spacer - only on desktop */}
+                <div className="hidden xl:block flex-1" />
+
+                {/* Desktop: Inline hints */}
+                <InlineHints
+                    className="hidden xl:flex"
+                    voiceInputAvailable={voiceInputAvailable}
                 />
-            )}
+            </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Desktop: Inline hints */}
-            <InputHints
-                className="hidden xl:flex"
-                voiceInputAvailable={voiceInputAvailable}
-            />
-
-            {/* Mobile/Tablet: Help icon with popover */}
-            <InputHintsPopover
+            {/* Row 2: Mobile/Tablet - Horizontally scrollable hints */}
+            <HintsScrollRow
                 className="xl:hidden"
                 voiceInputAvailable={voiceInputAvailable}
             />
@@ -103,119 +96,91 @@ export function InputControlsRow({
     );
 }
 
-interface InputHintsProps {
+interface InlineHintsProps {
     className?: string;
     voiceInputAvailable?: boolean;
 }
 
-function InputHints({ className, voiceInputAvailable }: InputHintsProps) {
+function InlineHints({ className, voiceInputAvailable }: InlineHintsProps) {
     return (
         <div
             className={cn(
-                "items-center gap-2 text-xs text-muted-foreground whitespace-nowrap flex-shrink-0",
+                "items-center gap-3 text-xs text-muted-foreground whitespace-nowrap flex-shrink-0",
                 className
             )}
         >
-            <span>/ commands</span>
-            <span className="text-muted-foreground/50">·</span>
-            <span>@ files</span>
-            <span className="text-muted-foreground/50">·</span>
-            <span>Tab mode</span>
-            <span className="text-muted-foreground/50">·</span>
-            <span>↑↓ history</span>
-            <span className="text-muted-foreground/50">·</span>
-            <span>Esc cancel</span>
-            <span className="text-muted-foreground/50">·</span>
-            <span className="flex items-center gap-1">
-                <ImageIcon className="h-3 w-3" />
-                paste
-            </span>
+            <HintItem shortcut="/" label="commands" />
+            <HintItem shortcut="@" label="files" />
+            <HintItem shortcut="Tab" label="mode" />
+            <HintItem shortcut="↑↓" label="history" />
+            <HintItem shortcut="Esc" label="cancel" />
+            <HintItem icon={<ImageIcon className="h-3 w-3" />} label="paste" />
             {voiceInputAvailable && (
-                <>
-                    <span className="text-muted-foreground/50">·</span>
-                    <span className="flex items-center gap-1">
-                        <Mic className="h-3 w-3" />
-                        Alt+Shift
-                    </span>
-                </>
+                <HintItem
+                    icon={<Mic className="h-3 w-3" />}
+                    shortcut="Alt+Shift"
+                    label="voice"
+                />
             )}
         </div>
     );
 }
 
-interface InputHintsPopoverProps {
+interface HintsScrollRowProps {
     className?: string;
     voiceInputAvailable?: boolean;
 }
 
-function InputHintsPopover({
+function HintsScrollRow({
     className,
     voiceInputAvailable
-}: InputHintsPopoverProps) {
+}: HintsScrollRowProps) {
     return (
-        <Popover>
-            <PopoverTrigger
-                render={
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                            "h-7 w-7 text-muted-foreground hover:text-foreground",
-                            className
-                        )}
-                    >
-                        <HelpCircle className="h-4 w-4" />
-                        <span className="sr-only">Keyboard shortcuts</span>
-                    </Button>
-                }
-            />
-            <PopoverContent side="top" align="end" className="w-auto">
-                <div className="space-y-2 text-xs">
-                    <div className="font-medium text-foreground mb-2">
-                        Keyboard shortcuts
-                    </div>
-                    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
-                        <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
-                            /
-                        </kbd>
-                        <span>Commands</span>
-
-                        <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
-                            @
-                        </kbd>
-                        <span>Mention files</span>
-
-                        <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
-                            Tab
-                        </kbd>
-                        <span>Toggle Plan/Build mode</span>
-
-                        <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
-                            ↑ ↓
-                        </kbd>
-                        <span>Message history</span>
-
-                        <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
-                            Esc
-                        </kbd>
-                        <span>Cancel</span>
-
-                        <span className="flex items-center gap-1">
-                            <ImageIcon className="h-3 w-3" />
-                        </span>
-                        <span>Paste images from clipboard</span>
-
-                        {voiceInputAvailable && (
-                            <>
-                                <span className="flex items-center gap-1">
-                                    <Mic className="h-3 w-3" />
-                                </span>
-                                <span>Alt+Shift for voice input</span>
-                            </>
-                        )}
-                    </div>
+        <div className={cn("relative", className)}>
+            {/* Scrollable hints container */}
+            <div className="overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground whitespace-nowrap pb-1 pr-6">
+                    <HintItem shortcut="/" label="commands" />
+                    <HintItem shortcut="@" label="files" />
+                    <HintItem shortcut="Tab" label="mode" />
+                    <HintItem shortcut="↑↓" label="history" />
+                    <HintItem shortcut="Esc" label="cancel" />
+                    <HintItem
+                        icon={<ImageIcon className="h-3 w-3" />}
+                        label="paste"
+                    />
+                    {voiceInputAvailable && (
+                        <HintItem
+                            icon={<Mic className="h-3 w-3" />}
+                            shortcut="Alt+Shift"
+                            label="voice"
+                        />
+                    )}
                 </div>
-            </PopoverContent>
-        </Popover>
+            </div>
+
+            {/* Right fade gradient */}
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+        </div>
+    );
+}
+
+interface HintItemProps {
+    shortcut?: string;
+    icon?: ReactNode;
+    label: string;
+}
+
+function HintItem({ shortcut, icon, label }: HintItemProps) {
+    return (
+        <span className="flex items-center gap-1.5 shrink-0">
+            {icon && <span className="text-muted-foreground">{icon}</span>}
+            {shortcut && (
+                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
+                    {shortcut}
+                </kbd>
+            )}
+            <span>{label}</span>
+        </span>
     );
 }

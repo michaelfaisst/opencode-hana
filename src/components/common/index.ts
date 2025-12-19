@@ -4,3 +4,4 @@ export { ConnectionStatus } from "./connection-status";
 export { ModelSelector, type SelectedModel } from "./model-selector";
 export { ModeToggle } from "./mode-toggle";
 export { ShikiCodeBlock, ShikiInlineCode } from "./shiki-code";
+export { ErrorBoundary } from "./error-boundary";

@@ -9,6 +9,7 @@ import {
     McpServersDialog
 } from "@/components/chat";
 import { CreateSessionDialog } from "@/components/sessions";
+import { ErrorBoundary } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -382,7 +383,7 @@ export function HomePage() {
     const hasNoSessions = !isLoadingSessions && sortedSessions.length === 0;
 
     return (
-        <div className="flex h-screen flex-col">
+        <div className="flex h-dvh flex-col">
             <Header
                 sessionTitle={sessionTitle}
                 onOpenMobileSessionsSheet={() =>
@@ -403,23 +404,25 @@ export function HomePage() {
                             isLoading={createSession.isPending}
                         />
                     ) : (
-                        <ChatContainer
-                            messages={messages}
-                            isLoadingMessages={
-                                isLoadingSession || isLoadingMessages
-                            }
-                            isSending={sendMessage.isPending}
-                            isBusy={isBusy}
-                            isRetrying={isRetrying}
-                            retryStatus={
-                                status.type === "retry" ? status : undefined
-                            }
-                            onSendMessage={handleSendMessage}
-                            onAbort={handleAbort}
-                            onCommand={handleCommand}
-                            autoFocusInput={messages.length === 0}
-                            sessionId={activeSessionId || undefined}
-                        />
+                        <ErrorBoundary inline className="h-full">
+                            <ChatContainer
+                                messages={messages}
+                                isLoadingMessages={
+                                    isLoadingSession || isLoadingMessages
+                                }
+                                isSending={sendMessage.isPending}
+                                isBusy={isBusy}
+                                isRetrying={isRetrying}
+                                retryStatus={
+                                    status.type === "retry" ? status : undefined
+                                }
+                                onSendMessage={handleSendMessage}
+                                onAbort={handleAbort}
+                                onCommand={handleCommand}
+                                autoFocusInput={messages.length === 0}
+                                sessionId={activeSessionId || undefined}
+                            />
+                        </ErrorBoundary>
                     )}
                 </div>
             </div>

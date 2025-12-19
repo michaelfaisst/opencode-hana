@@ -6,12 +6,6 @@ import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput
-} from "@/components/ui/input-group";
 import { ChevronDownIcon, XIcon, CheckIcon } from "lucide-react";
 
 const Combobox = ComboboxPrimitive.Root;
@@ -20,68 +14,51 @@ function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
     return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
 }
 
-function ComboboxTrigger({
+/**
+ * A styled trigger button for select-like combobox (input-inside-popup pattern).
+ * Use this when you want the search input to be inside the popup instead of outside.
+ */
+function ComboboxSelectTrigger({
     className,
     children,
+    size = "default",
     ...props
-}: ComboboxPrimitive.Trigger.Props) {
+}: ComboboxPrimitive.Trigger.Props & {
+    size?: "sm" | "default";
+}) {
     return (
         <ComboboxPrimitive.Trigger
-            data-slot="combobox-trigger"
-            className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
+            data-slot="combobox-select-trigger"
+            data-size={size}
+            className={cn(
+                "border-input data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 gap-1.5 rounded-none border bg-transparent py-2 pr-2 pl-2.5 text-xs transition-colors select-none focus-visible:ring-1 aria-invalid:ring-1 data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-none *:data-[slot=combobox-value]:flex *:data-[slot=combobox-value]:flex-1 *:data-[slot=combobox-value]:text-left *:data-[slot=combobox-value]:gap-1.5 [&_svg:not([class*='size-'])]:size-4 flex w-fit items-center whitespace-nowrap outline-none disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=combobox-value]:line-clamp-1 *:data-[slot=combobox-value]:items-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
+                className
+            )}
             {...props}
         >
             {children}
-            <ChevronDownIcon className="text-muted-foreground size-4 pointer-events-none" />
+            <ChevronDownIcon className="text-muted-foreground size-4 pointer-events-none ml-auto" />
         </ComboboxPrimitive.Trigger>
     );
 }
 
-function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
-    return (
-        <ComboboxPrimitive.Clear
-            data-slot="combobox-clear"
-            render={<InputGroupButton variant="ghost" size="icon-xs" />}
-            className={cn(className)}
-            {...props}
-        >
-            <XIcon className="pointer-events-none" />
-        </ComboboxPrimitive.Clear>
-    );
-}
-
-function ComboboxInput({
+/**
+ * A search input designed to be placed inside the popup.
+ * Use with ComboboxSelectTrigger for the input-inside-popup pattern.
+ */
+function ComboboxPopupInput({
     className,
-    children,
-    disabled = false,
-    showTrigger = true,
-    showClear = false,
     ...props
-}: ComboboxPrimitive.Input.Props & {
-    showTrigger?: boolean;
-    showClear?: boolean;
-}) {
+}: ComboboxPrimitive.Input.Props) {
     return (
-        <InputGroup className={cn("w-auto", className)}>
-            <ComboboxPrimitive.Input
-                render={<InputGroupInput disabled={disabled} />}
-                {...props}
-            />
-            <InputGroupAddon align="inline-end">
-                {showTrigger && (
-                    <InputGroupButton
-                        size="icon-xs"
-                        variant="ghost"
-                        render={<ComboboxTrigger />}
-                        data-slot="input-group-button"
-                        className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
-                        disabled={disabled}
-                    />
-                )}
-                {showClear && <ComboboxClear disabled={disabled} />}
-            </InputGroupAddon>
-            {children}
-        </InputGroup>
+        <ComboboxPrimitive.Input
+            data-slot="combobox-popup-input"
+            className={cn(
+                "border-input bg-input/30 focus:border-ring focus:ring-ring/50 h-8 w-full border px-2.5 py-1.5 text-xs outline-none transition-colors focus:ring-1",
+                className
+            )}
+            {...props}
+        />
     );
 }
 
@@ -112,7 +89,7 @@ function ComboboxContent({
                     data-slot="combobox-content"
                     data-chips={!!anchor}
                     className={cn(
-                        "bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:border-input/30 max-h-72 min-w-36 overflow-hidden rounded-none shadow-md ring-1 duration-100 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:shadow-none group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) data-[chips=true]:min-w-(--anchor-width)",
+                        "bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 max-h-72 min-w-36 overflow-hidden rounded-none shadow-md ring-1 duration-100 group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) data-[chips=true]:min-w-(--anchor-width) touch-pan-y overscroll-x-none",
                         className
                     )}
                     {...props}
@@ -127,7 +104,7 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
         <ComboboxPrimitive.List
             data-slot="combobox-list"
             className={cn(
-                "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto data-empty:p-0 overflow-y-auto overscroll-contain",
+                "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto data-empty:p-0 overflow-y-auto overscroll-contain touch-pan-y overscroll-x-none",
                 className
             )}
             {...props}
@@ -286,7 +263,6 @@ function useComboboxAnchor() {
 
 export {
     Combobox,
-    ComboboxInput,
     ComboboxContent,
     ComboboxList,
     ComboboxItem,
@@ -298,7 +274,8 @@ export {
     ComboboxChips,
     ComboboxChip,
     ComboboxChipsInput,
-    ComboboxTrigger,
+    ComboboxSelectTrigger,
+    ComboboxPopupInput,
     ComboboxValue,
     useComboboxAnchor
 };

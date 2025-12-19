@@ -24,14 +24,16 @@ import {
 } from "@/components/ui/select";
 import {
     Combobox,
-    ComboboxInput,
+    ComboboxSelectTrigger,
+    ComboboxPopupInput,
     ComboboxContent,
     ComboboxList,
     ComboboxItem,
     ComboboxGroup,
     ComboboxLabel,
     ComboboxEmpty,
-    ComboboxSeparator
+    ComboboxSeparator,
+    ComboboxValue
 } from "@/components/ui/combobox";
 import { useProviders } from "@/hooks";
 import {
@@ -169,15 +171,7 @@ export function SettingsPage() {
         ? `${defaultModel.providerID}::${defaultModel.modelID}`
         : "";
 
-    const currentModelLabel = useMemo(() => {
-        if (!defaultModel) {
-            return "";
-        }
-        const model = allModels.find((m) => m.value === currentModelValue);
-        return model ? model.label : currentModelValue;
-    }, [defaultModel, allModels, currentModelValue]);
-
-    // Convert value to label for display in the input
+    // Convert value to label for display in the trigger
     const itemToStringLabel = useCallback(
         (optionValue: string) => {
             return valueToLabelMap.get(optionValue) ?? optionValue;
@@ -192,6 +186,13 @@ export function SettingsPage() {
         }
         const [providerID, modelID] = value.split("::");
         setDefaultModel({ providerID, modelID });
+    };
+
+    // Clear search when popup opens
+    const handleModelOpenChange = (open: boolean) => {
+        if (open) {
+            setInputValue("");
+        }
     };
 
     const clearDefaultModel = () => {
@@ -268,21 +269,34 @@ export function SettingsPage() {
                                         onValueChange={handleModelChange}
                                         inputValue={inputValue}
                                         onInputValueChange={setInputValue}
+                                        onOpenChange={handleModelOpenChange}
                                         disabled={isLoadingProviders}
                                         itemToStringLabel={itemToStringLabel}
                                     >
-                                        <ComboboxInput
+                                        <ComboboxSelectTrigger
                                             id="default-model"
                                             className="flex-1"
-                                            placeholder={
-                                                isLoadingProviders
-                                                    ? "Loading..."
-                                                    : currentModelLabel ||
-                                                      "Search models..."
-                                            }
                                             disabled={isLoadingProviders}
-                                        />
+                                        >
+                                            <ComboboxValue>
+                                                {(val) =>
+                                                    isLoadingProviders
+                                                        ? "Loading..."
+                                                        : val
+                                                          ? itemToStringLabel(
+                                                                val as string
+                                                            )
+                                                          : "Select a model..."
+                                                }
+                                            </ComboboxValue>
+                                        </ComboboxSelectTrigger>
                                         <ComboboxContent className="w-[var(--anchor-width)]">
+                                            <div className="p-1 border-b border-border">
+                                                <ComboboxPopupInput
+                                                    placeholder="Search models..."
+                                                    autoFocus
+                                                />
+                                            </div>
                                             <ComboboxList>
                                                 {filteredGroupedModels.length ===
                                                     0 && (

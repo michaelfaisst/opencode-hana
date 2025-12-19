@@ -3,14 +3,16 @@ import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Combobox,
-    ComboboxInput,
+    ComboboxSelectTrigger,
+    ComboboxPopupInput,
     ComboboxContent,
     ComboboxList,
     ComboboxItem,
     ComboboxGroup,
     ComboboxLabel,
     ComboboxEmpty,
-    ComboboxSeparator
+    ComboboxSeparator,
+    ComboboxValue
 } from "@/components/ui/combobox";
 import { useProviders } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -104,7 +106,7 @@ export function ModelSelector({
         return Object.entries(groups);
     }, [allModels, inputValue]);
 
-    // Convert value to label for display in the input
+    // Convert value to label for display in the trigger
     const itemToStringLabel = useCallback(
         (optionValue: string) => {
             return valueToLabelMap.get(optionValue) ?? optionValue;
@@ -115,18 +117,18 @@ export function ModelSelector({
     // Get selected model value
     const selectedValue = value ? `${value.providerID}::${value.modelID}` : "";
 
-    // Get selected model label
-    const selectedLabel = useMemo(() => {
-        if (!value) return "";
-        const model = allModels.find((m) => m.value === selectedValue);
-        return model?.label || `${value.providerID}: ${value.modelID}`;
-    }, [value, allModels, selectedValue]);
-
     const handleSelect = (newValue: string | null) => {
         if (!newValue) return;
         const [providerID, modelID] = newValue.split("::");
         if (providerID && modelID) {
             onChange({ providerID, modelID });
+        }
+    };
+
+    // Clear the search input when the popup opens
+    const handleOpenChange = (open: boolean) => {
+        if (open) {
+            setInputValue("");
         }
     };
 
@@ -164,23 +166,32 @@ export function ModelSelector({
             onValueChange={handleSelect}
             inputValue={inputValue}
             onInputValueChange={setInputValue}
+            onOpenChange={handleOpenChange}
             disabled={disabled}
             itemToStringLabel={itemToStringLabel}
         >
-            <div className={cn("relative", className)}>
-                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <Bot className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <ComboboxInput
-                    className={cn(
-                        "min-w-[280px] md:min-w-[320px] lg:min-w-[400px] pl-8",
-                        className
-                    )}
-                    placeholder={selectedLabel || "Search models..."}
-                    disabled={disabled}
-                />
-            </div>
+            <ComboboxSelectTrigger
+                className={cn(
+                    "min-w-[280px] md:min-w-[320px] lg:min-w-[400px]",
+                    className
+                )}
+            >
+                <Bot className="h-4 w-4 text-muted-foreground shrink-0" />
+                <ComboboxValue>
+                    {(val) =>
+                        val
+                            ? itemToStringLabel(val as string)
+                            : "Select a model..."
+                    }
+                </ComboboxValue>
+            </ComboboxSelectTrigger>
             <ComboboxContent className="w-[var(--anchor-width)]" side="top">
+                <div className="p-1 border-b border-border">
+                    <ComboboxPopupInput
+                        placeholder="Search models..."
+                        autoFocus
+                    />
+                </div>
                 <ComboboxList>
                     {filteredGroupedModels.length === 0 && (
                         <ComboboxEmpty>No models found</ComboboxEmpty>
