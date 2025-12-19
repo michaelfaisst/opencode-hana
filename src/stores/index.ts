@@ -3,6 +3,7 @@ export {
   useAppSettingsStore,
   type AgentMode,
   type SelectedModel,
+  type VoiceInputSettings,
 } from "./app-settings-store";
 export { useUILayoutStore } from "./ui-layout-store";
 export { useThemeStore, THEMES, getShikiTheme, type Theme, type ResolvedTheme } from "./theme-store";
