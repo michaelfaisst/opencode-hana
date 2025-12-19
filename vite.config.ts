@@ -82,6 +82,10 @@ export default defineConfig(({ mode }) => {
                 "/project": {
                     target: serverUrl,
                     changeOrigin: true
+                },
+                "/mcp": {
+                    target: serverUrl,
+                    changeOrigin: true
                 }
             }
         }

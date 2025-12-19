@@ -13,7 +13,9 @@ import {
     Search,
     X,
     Circle,
-    Settings
+    Settings,
+    MoreVertical,
+    Pencil
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,10 +26,22 @@ import {
     TooltipTrigger,
     TooltipContent
 } from "@/components/ui/tooltip";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { getProjectName, getTimeAgoShort } from "@/lib/format";
-import { useSessions, useCreateSession, useDeleteSession } from "@/hooks";
+import {
+    useSessions,
+    useCreateSession,
+    useDeleteSession,
+    useRenameSession
+} from "@/hooks";
 import { CreateSessionDialog } from "@/components/sessions";
+import { RenameSessionDialog } from "@/components/chat";
 import { useEventsContext } from "@/providers/events-provider";
 import { useUILayoutStore } from "@/stores";
 import type { Session } from "@opencode-ai/sdk/client";
@@ -63,6 +77,7 @@ export function SessionsSidebar({
     const { data: sessions = [], isLoading } = useSessions();
     const createSession = useCreateSession();
     const deleteSession = useDeleteSession();
+    const renameSession = useRenameSession();
     const { sessionStatuses, isConnected } = useEventsContext();
 
     // Extract OpenCode version from the first session (all sessions have the same version)
@@ -72,6 +87,10 @@ export function SessionsSidebar({
 
     // State for create session dialog
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+    // State for rename session dialog
+    const [sessionToRename, setSessionToRename] =
+        useState<SessionWithTimestamps | null>(null);
 
     // State for search
     const [searchQuery, setSearchQuery] = useState("");
@@ -222,6 +241,29 @@ export function SessionsSidebar({
             onSessionSelect?.();
         },
         [navigate, onSessionSelect]
+    );
+
+    const handleRenameSession = useCallback(
+        (session: SessionWithTimestamps) => {
+            setSessionToRename(session);
+        },
+        []
+    );
+
+    const handleRenameConfirm = useCallback(
+        (newTitle: string) => {
+            if (sessionToRename) {
+                renameSession.mutate(
+                    { id: sessionToRename.id, title: newTitle },
+                    {
+                        onSuccess: () => {
+                            setSessionToRename(null);
+                        }
+                    }
+                );
+            }
+        },
+        [sessionToRename, renameSession]
     );
 
     return (
@@ -428,6 +470,7 @@ export function SessionsSidebar({
                                     sessionStatuses={sessionStatuses}
                                     onSessionClick={handleSessionClick}
                                     onDeleteSession={handleDeleteSession}
+                                    onRenameSession={handleRenameSession}
                                 />
                             ))
                         ) : (
@@ -446,6 +489,9 @@ export function SessionsSidebar({
                                     }
                                     onDelete={(e) =>
                                         handleDeleteSession(e, session.id)
+                                    }
+                                    onRename={() =>
+                                        handleRenameSession(session)
                                     }
                                 />
                             ))
@@ -470,6 +516,15 @@ export function SessionsSidebar({
                 onCreateSession={handleCreateSession}
                 isLoading={createSession.isPending}
             />
+
+            {/* Rename session dialog */}
+            <RenameSessionDialog
+                open={!!sessionToRename}
+                onOpenChange={(open) => !open && setSessionToRename(null)}
+                currentTitle={sessionToRename?.title}
+                onRename={handleRenameConfirm}
+                isLoading={renameSession.isPending}
+            />
         </div>
     );
 }
@@ -483,6 +538,7 @@ interface SessionGroupComponentProps {
     sessionStatuses: Map<string, { type: string }>;
     onSessionClick: (sessionId: string) => void;
     onDeleteSession: (e: React.MouseEvent, sessionId: string) => void;
+    onRenameSession: (session: SessionWithTimestamps) => void;
 }
 
 function SessionGroupComponent({
@@ -492,7 +548,8 @@ function SessionGroupComponent({
     currentSessionId,
     sessionStatuses,
     onSessionClick,
-    onDeleteSession
+    onDeleteSession,
+    onRenameSession
 }: SessionGroupComponentProps) {
     return (
         <div className="mb-1">
@@ -528,6 +585,7 @@ function SessionGroupComponent({
                             }
                             onClick={() => onSessionClick(session.id)}
                             onDelete={(e) => onDeleteSession(e, session.id)}
+                            onRename={() => onRenameSession(session)}
                             compact
                         />
                     ))}
@@ -544,6 +602,7 @@ interface SessionItemProps {
     isBusy?: boolean;
     onClick: () => void;
     onDelete: (e: React.MouseEvent) => void;
+    onRename: () => void;
     compact?: boolean;
 }
 
@@ -553,6 +612,7 @@ function SessionItem({
     isBusy,
     onClick,
     onDelete,
+    onRename,
     compact
 }: SessionItemProps) {
     const displayTitle = session.title || `Session ${session.id.slice(0, 8)}`;
@@ -563,13 +623,13 @@ function SessionItem({
     const timeAgo = updatedDate ? getTimeAgoShort(updatedDate) : null;
 
     return (
-        <button
-            onClick={onClick}
+        <div
             className={cn(
-                "group w-full flex items-center gap-2 px-3 py-2 text-left transition-colors",
+                "group w-full flex items-center gap-2 px-3 py-2 text-left transition-colors cursor-pointer",
                 "hover:bg-secondary",
                 isActive && "bg-secondary text-secondary-foreground"
             )}
+            onClick={onClick}
         >
             {isBusy ? (
                 <Loader2 className="h-4 w-4 shrink-0 text-primary animate-spin" />
@@ -600,19 +660,40 @@ function SessionItem({
                     </div>
                 )}
             </div>
-            <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                    "h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity",
-                    "text-muted-foreground hover:text-destructive"
-                )}
-                onClick={onDelete}
-            >
-                <Trash2 className="h-3 w-3" />
-                <span className="sr-only">Delete session</span>
-            </Button>
-        </button>
+            <DropdownMenu>
+                <DropdownMenuTrigger
+                    render={
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                "h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                                "text-muted-foreground hover:text-foreground"
+                            )}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <MoreVertical className="h-3 w-3" />
+                            <span className="sr-only">Session options</span>
+                        </Button>
+                    }
+                />
+                <DropdownMenuContent align="end" side="bottom">
+                    <DropdownMenuItem
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRename();
+                        }}
+                    >
+                        <Pencil className="h-3 w-3" />
+                        Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                        <Trash2 className="h-3 w-3" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
     );
 }
 
