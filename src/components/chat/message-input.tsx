@@ -8,7 +8,7 @@ import { CommandPopover } from "./command-popover";
 import { ImageLightbox } from "./image-lightbox";
 import { ImagePreviewGrid } from "./message-input/image-preview-grid";
 import { InputControlsRow } from "./message-input/input-controls-row";
-import { VoiceInputButton } from "./message-input/voice-input-button";
+import { VoiceInputButton, type VoiceInputButtonRef } from "./message-input/voice-input-button";
 import { useFileSearch } from "@/hooks/use-file-search";
 import { useInputHistory } from "@/hooks/use-input-history";
 import { filterCommands, type Command } from "@/hooks/use-commands";
@@ -67,6 +67,7 @@ export const MessageInput = memo(function MessageInput({
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const voiceInputRef = useRef<VoiceInputButtonRef>(null);
   
   // Track committed text during voice transcription
   // This holds all finalized text, while interim results are displayed temporarily
@@ -141,6 +142,27 @@ export const MessageInput = memo(function MessageInput({
       clearFiles();
     }
   }, [mentionState.isActive, mentionState.query, searchFiles, clearFiles]);
+
+  // Keyboard shortcut for voice input (Alt+Shift)
+  useEffect(() => {
+    if (!isVoiceInputAvailable) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt+Shift triggers voice input toggle
+      // Trigger when Shift is pressed while Alt is held, or Alt pressed while Shift is held
+      const isAltShiftCombo = 
+        (e.key === 'Shift' && e.altKey) || 
+        (e.key === 'Alt' && e.shiftKey);
+      
+      if (isAltShiftCombo && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        voiceInputRef.current?.toggle();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isVoiceInputAvailable]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -524,6 +546,7 @@ export const MessageInput = memo(function MessageInput({
         {/* Voice input button - only show if enabled and API key is set */}
         {isVoiceInputAvailable && (
           <VoiceInputButton
+            ref={voiceInputRef}
             apiKey={voiceInput.apiKey!}
             language={voiceInput.language}
             onTranscript={handleVoiceTranscript}
@@ -566,6 +589,7 @@ export const MessageInput = memo(function MessageInput({
         agentMode={agentMode}
         isBusy={isBusy ?? false}
         selectedModel={selectedModel ?? undefined}
+        voiceInputAvailable={isVoiceInputAvailable}
         onToggleMode={onToggleMode}
         onModelChange={setSelectedModel}
       />

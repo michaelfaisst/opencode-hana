@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Lightbulb, Hammer } from "lucide-react";
+import { Image as ImageIcon, Lightbulb, Hammer, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ModelSelector, type SelectedModel } from "@/components/common";
@@ -9,6 +9,7 @@ interface InputControlsRowProps {
   agentMode: AgentMode;
   isBusy: boolean;
   selectedModel?: SelectedModel;
+  voiceInputAvailable?: boolean;
   onToggleMode?: () => void;
   onModelChange?: (model: SelectedModel) => void;
 }
@@ -17,6 +18,7 @@ export function InputControlsRow({
   agentMode,
   isBusy,
   selectedModel,
+  voiceInputAvailable,
   onToggleMode,
   onModelChange,
 }: InputControlsRowProps) {
@@ -69,18 +71,19 @@ export function InputControlsRow({
       </div>
 
       {/* Hints */}
-      <InputHints isBusy={isBusy} />
+      <InputHints isBusy={isBusy} voiceInputAvailable={voiceInputAvailable} />
     </div>
   );
 }
 
 interface InputHintsProps {
   isBusy: boolean;
+  voiceInputAvailable?: boolean;
 }
 
-function InputHints({ isBusy }: InputHintsProps) {
+function InputHints({ isBusy, voiceInputAvailable }: InputHintsProps) {
   return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground sm:ml-auto">
+    <div className="flex items-center gap-2 text-xs text-muted-foreground sm:ml-auto flex-wrap">
       <span>/ commands</span>
       <span className="text-muted-foreground/50">·</span>
       <span>@ files</span>
@@ -101,6 +104,15 @@ function InputHints({ isBusy }: InputHintsProps) {
         <ImageIcon className="h-3 w-3" />
         paste
       </span>
+      {voiceInputAvailable && (
+        <>
+          <span className="text-muted-foreground/50">·</span>
+          <span className="flex items-center gap-1">
+            <Mic className="h-3 w-3" />
+            Alt+Shift
+          </span>
+        </>
+      )}
     </div>
   );
 }
