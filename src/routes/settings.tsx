@@ -27,7 +27,7 @@ import { useProviders } from "@/hooks";
 import { useAppSettingsStore, useNotificationStore, NOTIFICATION_SOUNDS } from "@/stores";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, ArrowLeft, Github, Volume2, Bell } from "lucide-react";
+import { X, ArrowLeft, Github, Volume2, Bell, Mic, Eye, EyeOff } from "lucide-react";
 import { 
   requestNotificationPermission, 
   getBrowserNotificationPermission,
@@ -41,6 +41,10 @@ export function SettingsPage() {
     replaceSessionOnNew,
     setDefaultModel,
     setReplaceSessionOnNew,
+    voiceInput,
+    setVoiceInputEnabled,
+    setVoiceInputApiKey,
+    setVoiceInputLanguage,
   } = useAppSettingsStore();
   const {
     notificationsEnabled,
@@ -57,6 +61,7 @@ export function SettingsPage() {
   const { data: providersData, isLoading: isLoadingProviders } = useProviders();
   const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "http://localhost:4096";
   const [inputValue, setInputValue] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
 
   // Sync browser permission state on mount
   useEffect(() => {
@@ -420,6 +425,82 @@ export function SettingsPage() {
                   </div>
                 )}
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Mic className="h-4 w-4" />
+              Voice Input
+            </CardTitle>
+            <CardDescription>
+              Configure voice-to-text input using Deepgram
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Enable voice input toggle */}
+            <div className="flex items-center gap-4 max-w-lg">
+              <div className="flex-1 space-y-0.5">
+                <Label htmlFor="voice-input-enabled">Enable voice input</Label>
+                <p className="text-xs text-muted-foreground">
+                  {voiceInput.apiKey 
+                    ? "Use your microphone to input text"
+                    : "Requires Deepgram API key"}
+                </p>
+              </div>
+              <Switch
+                id="voice-input-enabled"
+                checked={voiceInput.enabled}
+                onCheckedChange={setVoiceInputEnabled}
+                disabled={!voiceInput.apiKey}
+              />
+            </div>
+
+            {/* Deepgram API Key input */}
+            <div className="space-y-2">
+              <Label htmlFor="deepgram-api-key">Deepgram API Key</Label>
+              <div className="flex gap-2 max-w-sm">
+                <Input
+                  id="deepgram-api-key"
+                  type={showApiKey ? "text" : "password"}
+                  value={voiceInput.apiKey ?? ""}
+                  onChange={(e) => setVoiceInputApiKey(e.target.value || null)}
+                  placeholder="Enter your Deepgram API key"
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                >
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Get your API key from console.deepgram.com
+              </p>
+            </div>
+
+            {/* Language selector */}
+            {voiceInput.enabled && voiceInput.apiKey && (
+              <div className="space-y-2">
+                <Label htmlFor="voice-language">Language</Label>
+                <Select
+                  value={voiceInput.language}
+                  onValueChange={(value) => value && setVoiceInputLanguage(value)}
+                >
+                  <SelectTrigger className="max-w-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en-US">English (US)</SelectItem>
+                    <SelectItem value="en-GB">English (UK)</SelectItem>
+                    <SelectItem value="en-AU">English (AU)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </CardContent>
         </Card>

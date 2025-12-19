@@ -8,6 +8,7 @@ import { CommandPopover } from "./command-popover";
 import { ImageLightbox } from "./image-lightbox";
 import { ImagePreviewGrid } from "./message-input/image-preview-grid";
 import { InputControlsRow } from "./message-input/input-controls-row";
+import { VoiceInputButton, type VoiceInputButtonRef } from "./message-input/voice-input-button";
 import { useFileSearch } from "@/hooks/use-file-search";
 import { useInputHistory } from "@/hooks/use-input-history";
 import { filterCommands, type Command } from "@/hooks/use-commands";
@@ -66,10 +67,18 @@ export const MessageInput = memo(function MessageInput({
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const voiceInputRef = useRef<VoiceInputButtonRef>(null);
+  
+  // Track committed text during voice transcription
+  // This holds all finalized text, while interim results are displayed temporarily
+  const voiceCommittedTextRef = useRef<string>("");
 
   // Get the session's directory from the store
   const directory = useSessionStore((state) => state.directory);
-  const { selectedModel, setSelectedModel } = useAppSettingsStore();
+  const { selectedModel, setSelectedModel, voiceInput } = useAppSettingsStore();
+
+  // Check if voice input is available (enabled and has API key)
+  const isVoiceInputAvailable = voiceInput.enabled && !!voiceInput.apiKey;
 
   const {
     files,
@@ -133,6 +142,27 @@ export const MessageInput = memo(function MessageInput({
       clearFiles();
     }
   }, [mentionState.isActive, mentionState.query, searchFiles, clearFiles]);
+
+  // Keyboard shortcut for voice input (Alt+Shift)
+  useEffect(() => {
+    if (!isVoiceInputAvailable) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt+Shift triggers voice input toggle
+      // Trigger when Shift is pressed while Alt is held, or Alt pressed while Shift is held
+      const isAltShiftCombo = 
+        (e.key === 'Shift' && e.altKey) || 
+        (e.key === 'Alt' && e.shiftKey);
+      
+      if (isAltShiftCombo && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        voiceInputRef.current?.toggle();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isVoiceInputAvailable]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -303,6 +333,27 @@ export const MessageInput = memo(function MessageInput({
 
   const removeImage = useCallback((id: string) => {
     setImages((prev) => prev.filter((img) => img.id !== id));
+  }, []);
+
+  // Initialize committed text when recording starts
+  const handleRecordingStart = useCallback(() => {
+    voiceCommittedTextRef.current = message.trim();
+  }, [message]);
+
+  // Handle voice transcription - properly handle interim vs final results
+  const handleVoiceTranscript = useCallback((text: string, isFinal: boolean) => {
+    const committed = voiceCommittedTextRef.current;
+    
+    if (isFinal) {
+      // Final result: commit the text and update the ref
+      const newCommitted = committed ? `${committed} ${text}` : text;
+      voiceCommittedTextRef.current = newCommitted;
+      setMessage(newCommitted);
+    } else {
+      // Interim result: show committed + interim (don't update ref)
+      const display = committed ? `${committed} ${text}` : text;
+      setMessage(display);
+    }
   }, []);
 
   const handleSubmit = () => {
@@ -492,6 +543,17 @@ export const MessageInput = memo(function MessageInput({
             rows={1}
           />
         </div>
+        {/* Voice input button - only show if enabled and API key is set */}
+        {isVoiceInputAvailable && (
+          <VoiceInputButton
+            ref={voiceInputRef}
+            apiKey={voiceInput.apiKey!}
+            language={voiceInput.language}
+            onTranscript={handleVoiceTranscript}
+            onRecordingStart={handleRecordingStart}
+            disabled={disabled}
+          />
+        )}
         {isBusy ? (
           <Tooltip>
             <TooltipTrigger
@@ -527,6 +589,7 @@ export const MessageInput = memo(function MessageInput({
         agentMode={agentMode}
         isBusy={isBusy ?? false}
         selectedModel={selectedModel ?? undefined}
+        voiceInputAvailable={isVoiceInputAvailable}
         onToggleMode={onToggleMode}
         onModelChange={setSelectedModel}
       />

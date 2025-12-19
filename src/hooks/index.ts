@@ -18,6 +18,11 @@ export {
   useExportSession,
   type Command,
 } from "./use-commands";
+export {
+  useVoiceInput,
+  type UseVoiceInputOptions,
+  type UseVoiceInputReturn,
+} from "./use-voice-input";
 
 // Re-export types from stores for backwards compatibility
 export type { SelectedModel, AgentMode } from "@/stores";
