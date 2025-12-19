@@ -10,6 +10,8 @@
 - Always follow the user's coding style and conventions.
 - Always check similar existing code for style and patterns.
 - When in doubt, ask the user for their preferences.
+- Don't commit code if you are not explicitly instructed to do so.
+- When you're asked to commit code, use conventional commit messages.
 
 ## Development Philosophy
 
