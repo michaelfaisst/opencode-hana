@@ -22,7 +22,10 @@ export const MarkdownContent = memo(function MarkdownContent({
         components={{
           code({ className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || "");
-            const isInline = !match;
+            const codeString = String(children);
+            
+            // Inline code: no language AND no newlines
+            const isInline = !match && !codeString.includes('\n');
 
             if (isInline) {
               return (
@@ -37,8 +40,8 @@ export const MarkdownContent = memo(function MarkdownContent({
 
             return (
               <ShikiCodeBlock
-                code={String(children).replace(/\n$/, "")}
-                language={match[1]}
+                code={codeString.replace(/\n$/, "")}
+                language={match?.[1] || "text"}
                 className="mb-6 rounded"
               />
             );

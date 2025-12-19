@@ -1,10 +1,11 @@
-import { useRef, useCallback, useState, useEffect, useMemo } from "react";
+import { useRef, useCallback, useState, useEffect, useMemo, useLayoutEffect } from "react";
 import { ArrowDown, Loader2 } from "lucide-react";
 import { MessageItem } from "./message-item";
 import { Skeleton } from "@/components/common/loading-skeleton";
 import { Button } from "@/components/ui/button";
 
 const MESSAGES_PER_BATCH = 30;
+const SCROLL_THRESHOLD = 100;
 
 interface Part {
   type: string;
@@ -39,10 +40,13 @@ export function MessageList({
 }: MessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const [atBottom, setAtBottom] = useState(true);
-  const atBottomRef = useRef(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const shouldAutoScrollRef = useRef(true);
   const wasBusyRef = useRef(false);
   const hasInitialScrolled = useRef(false);
+  const lastScrollTopRef = useRef(0);
+  const isUserScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Pagination state
   const [visibleCount, setVisibleCount] = useState(MESSAGES_PER_BATCH);
@@ -56,7 +60,14 @@ export function MessageList({
 
   const hasMoreMessages = visibleCount < messages.length;
 
-  // Scroll to bottom function (instant for initial, smooth for user actions)
+  // Check if currently at bottom (helper, no state updates)
+  const isAtBottom = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return true;
+    return container.scrollHeight - container.scrollTop - container.clientHeight < SCROLL_THRESHOLD;
+  }, []);
+
+  // Scroll to bottom function (always instant during streaming to avoid fighting)
   const scrollToBottom = useCallback((instant = false) => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -70,9 +81,8 @@ export function MessageList({
   // Initial scroll to bottom when messages first load
   useEffect(() => {
     if (messages.length > 0 && !hasInitialScrolled.current) {
-      // Use requestAnimationFrame to ensure DOM has rendered
       requestAnimationFrame(() => {
-        scrollToBottom(true); // Instant scroll for initial load
+        scrollToBottom(true);
         hasInitialScrolled.current = true;
       });
     }
@@ -115,7 +125,7 @@ export function MessageList({
       },
       { 
         root: container,
-        rootMargin: "200px", // Trigger before sentinel is visible
+        rootMargin: "200px",
         threshold: 0
       }
     );
@@ -124,21 +134,50 @@ export function MessageList({
     return () => observer.disconnect();
   }, [hasMoreMessages, isLoadingMore, loadMoreMessages]);
 
-  // Track if user is at bottom
+  // Handle scroll - detect user scrolling up to disable auto-scroll
   const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
     
-    const threshold = 100;
-    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
-    atBottomRef.current = isAtBottom;
-    setAtBottom(isAtBottom);
+    const currentScrollTop = container.scrollTop;
+    const atBottom = isAtBottom();
+    
+    // Detect if user scrolled up (manual scroll away from bottom)
+    if (currentScrollTop < lastScrollTopRef.current && !atBottom) {
+      // User scrolled up - disable auto-scroll
+      shouldAutoScrollRef.current = false;
+      isUserScrollingRef.current = true;
+    } else if (atBottom) {
+      // User scrolled back to bottom - re-enable auto-scroll
+      shouldAutoScrollRef.current = true;
+    }
+    
+    lastScrollTopRef.current = currentScrollTop;
+    
+    // Debounce the button visibility update to prevent flickering
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      setShowScrollButton(!isAtBottom());
+      isUserScrollingRef.current = false;
+    }, 150);
+  }, [isAtBottom]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, []);
 
-  // Auto-scroll when new messages arrive (if at bottom)
-  useEffect(() => {
-    if (atBottomRef.current && messages.length > 0) {
-      scrollToBottom();
+  // Auto-scroll during streaming when shouldAutoScroll is true
+  // Use useLayoutEffect to scroll before paint, reducing flicker
+  useLayoutEffect(() => {
+    if (shouldAutoScrollRef.current && messages.length > 0 && !isUserScrollingRef.current) {
+      scrollToBottom(false); // Always use smooth scrolling
     }
   }, [messages, scrollToBottom]);
 
@@ -147,13 +186,20 @@ export function MessageList({
     const isNowBusy = isBusy || isRetrying;
     const wasBusy = wasBusyRef.current;
     
-    // Just became busy - scroll to bottom
+    // Just became busy - force scroll to bottom and enable auto-scroll
     if (isNowBusy && !wasBusy) {
-      scrollToBottom();
+      shouldAutoScrollRef.current = true;
+      scrollToBottom(true);
     }
     
     wasBusyRef.current = isNowBusy ?? false;
   }, [isBusy, isRetrying, scrollToBottom]);
+
+  // Re-enable auto-scroll when user clicks scroll to bottom button
+  const handleScrollToBottomClick = useCallback(() => {
+    shouldAutoScrollRef.current = true;
+    scrollToBottom(false);
+  }, [scrollToBottom]);
 
   if (isLoading) {
     return (
@@ -213,12 +259,12 @@ export function MessageList({
       </div>
 
       {/* Scroll to bottom button */}
-      {!atBottom && (
+      {showScrollButton && (
         <Button
           variant="secondary"
           size="icon"
           className="absolute bottom-4 right-4 h-8 w-8 rounded-full shadow-md z-10"
-          onClick={() => scrollToBottom()}
+          onClick={handleScrollToBottomClick}
         >
           <ArrowDown className="h-4 w-4" />
           <span className="sr-only">Scroll to bottom</span>

@@ -36,23 +36,40 @@ interface TodoListProps {
 }
 
 export function TodoList({ messages, className }: TodoListProps) {
-  // Extract the latest todos from todowrite tool calls
+  // Extract todos from the most recent assistant message that has todowrite calls
   const todos = useMemo(() => {
     let latestTodos: TodoItem[] = [];
     
-    // Go through all messages and find todowrite tool calls
-    for (const message of messages) {
+    // Iterate backwards to find the most recent assistant message with todos
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i];
       if (message.role !== "assistant") continue;
       
       for (const part of message.parts) {
         if (part.type === "tool") {
           const toolPart = part as unknown as ToolPart;
           if (toolPart.tool === "todowrite" && toolPart.state?.input?.todos) {
-            // Each todowrite call replaces the entire todo list
-            latestTodos = toolPart.state.input.todos;
+            // Found todos - merge by ID within this message
+            const todosById = new Map<string, TodoItem>();
+            
+            for (const p of message.parts) {
+              if (p.type === "tool") {
+                const tp = p as unknown as ToolPart;
+                if (tp.tool === "todowrite" && tp.state?.input?.todos) {
+                  for (const todo of tp.state.input.todos) {
+                    todosById.set(todo.id, todo);
+                  }
+                }
+              }
+            }
+            
+            latestTodos = Array.from(todosById.values());
+            break;
           }
         }
       }
+      
+      if (latestTodos.length > 0) break;
     }
     
     return latestTodos;

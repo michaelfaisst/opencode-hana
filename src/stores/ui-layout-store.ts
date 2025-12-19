@@ -6,6 +6,10 @@ interface UILayoutStore {
   sessionsSidebarCollapsed: boolean;
   chatSidebarCollapsed: boolean;
 
+  // Mobile sheet states (not persisted)
+  mobileSessionsSheetOpen: boolean;
+  mobileChatSheetOpen: boolean;
+
   // Collapsible section states (keyed by section ID)
   collapsedSections: Record<string, boolean>;
 
@@ -17,6 +21,10 @@ interface UILayoutStore {
   setSectionCollapsed: (key: string, collapsed: boolean) => void;
   toggleSection: (key: string) => void;
   isSectionCollapsed: (key: string, defaultOpen?: boolean) => boolean;
+
+  // Mobile sheet actions
+  setMobileSessionsSheetOpen: (open: boolean) => void;
+  setMobileChatSheetOpen: (open: boolean) => void;
 }
 
 export const useUILayoutStore = create<UILayoutStore>()(
@@ -26,6 +34,10 @@ export const useUILayoutStore = create<UILayoutStore>()(
       sessionsSidebarCollapsed: false,
       chatSidebarCollapsed: false,
       collapsedSections: {},
+
+      // Mobile sheet states (not persisted via partialize)
+      mobileSessionsSheetOpen: false,
+      mobileChatSheetOpen: false,
 
       // Sessions sidebar
       toggleSessionsSidebar: () =>
@@ -42,6 +54,12 @@ export const useUILayoutStore = create<UILayoutStore>()(
         })),
       setChatSidebarCollapsed: (collapsed) =>
         set({ chatSidebarCollapsed: collapsed }),
+
+      // Mobile sheet actions
+      setMobileSessionsSheetOpen: (open) =>
+        set({ mobileSessionsSheetOpen: open }),
+      setMobileChatSheetOpen: (open) =>
+        set({ mobileChatSheetOpen: open }),
 
       // Collapsible sections
       setSectionCollapsed: (key, collapsed) =>
@@ -69,6 +87,12 @@ export const useUILayoutStore = create<UILayoutStore>()(
     }),
     {
       name: "opencode-ui-layout",
+      // Only persist sidebar collapsed states and sections, not mobile sheet state
+      partialize: (state) => ({
+        sessionsSidebarCollapsed: state.sessionsSidebarCollapsed,
+        chatSidebarCollapsed: state.chatSidebarCollapsed,
+        collapsedSections: state.collapsedSections,
+      }),
     }
   )
 );

@@ -9,6 +9,7 @@ interface EventsContextValue {
   reconnect: () => void;
   disconnect: () => void;
   setSessionBusy: (sessionId: string) => void;
+  setSessionIdle: (sessionId: string) => void;
 }
 
 const EventsContext = createContext<EventsContextValue | null>(null);
@@ -34,7 +35,7 @@ export function useEventsContext() {
 }
 
 export function useSessionStatusFromContext(sessionId: string) {
-  const { sessionStatuses, isConnected, setSessionBusy } = useEventsContext();
+  const { sessionStatuses, isConnected, setSessionBusy, setSessionIdle } = useEventsContext();
   const status = sessionStatuses.get(sessionId) ?? { type: "idle" as const };
 
   return {
@@ -45,5 +46,6 @@ export function useSessionStatusFromContext(sessionId: string) {
     isRetrying: status.type === "retry",
     isIdle: status.type === "idle",
     setSessionBusy,
+    setSessionIdle,
   };
 }

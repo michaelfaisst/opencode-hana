@@ -138,8 +138,6 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
         bashInput={bashInput}
         state={state}
         statusIcon={statusIcon}
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
       />
     );
   }
@@ -163,8 +161,6 @@ export const ToolInvocationDisplay = memo(function ToolInvocationDisplay({
       tool={tool}
       state={state}
       statusIcon={statusIcon}
-      isOpen={isOpen}
-      setIsOpen={setIsOpen}
     />
   );
 });
@@ -357,20 +353,18 @@ interface BashToolDisplayProps {
   bashInput: BashInput;
   state: ToolPart["state"];
   statusIcon: React.ReactNode;
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
 }
 
 const BashToolDisplay = memo(function BashToolDisplay({
   bashInput,
   state,
   statusIcon,
-  isOpen,
-  setIsOpen,
 }: BashToolDisplayProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  
   // Format output for display
   const outputContent = useMemo(() => {
-    if (state.status === "completed" && state.output) {
+    if (state.status === "completed") {
       const output = state.output;
       if (output === null || output === undefined) return "";
       if (typeof output === "string") return output;
@@ -379,8 +373,25 @@ const BashToolDisplay = memo(function BashToolDisplay({
     if (state.status === "error" && state.error) {
       return state.error;
     }
-    return null;
+    return "";
   }, [state.status, state.output, state.error]);
+
+  const hasContent = outputContent.length > 0;
+
+  // Non-expandable version when there's no content
+  if (!hasContent) {
+    return (
+      <div className="rounded border border-border bg-muted/50">
+        <div className="px-3 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2 min-w-0">
+          <Terminal className="h-3 w-3 shrink-0" />
+          <span className="font-mono text-foreground/70 truncate">
+            {bashInput.command}
+          </span>
+          <span className="ml-auto shrink-0">{statusIcon}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <details
@@ -400,28 +411,23 @@ const BashToolDisplay = memo(function BashToolDisplay({
         </span>
         <span className="ml-auto shrink-0">{statusIcon}</span>
       </summary>
-      {/* Only render content when open */}
       {isOpen && (
         <div className="border-t border-border">
-
-          {/* Output */}
-          {outputContent && (
-            <div className="px-3 py-2">
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                {state.status === "error" ? "Error" : "Output"}
-              </div>
-              <pre
-                className={cn(
-                  "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
-                  state.status === "error"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-background"
-                )}
-              >
-                {outputContent}
-              </pre>
+          <div className="px-3 py-2">
+            <div className="text-xs font-medium text-muted-foreground mb-1">
+              {state.status === "error" ? "Error" : "Output"}
             </div>
-          )}
+            <pre
+              className={cn(
+                "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
+                state.status === "error"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-background"
+              )}
+            >
+              {outputContent}
+            </pre>
+          </div>
         </div>
       )}
     </details>
@@ -540,20 +546,18 @@ interface DefaultToolDisplayProps {
   tool: string;
   state: ToolPart["state"];
   statusIcon: React.ReactNode;
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
 }
 
 const DefaultToolDisplay = memo(function DefaultToolDisplay({
   tool,
   state,
   statusIcon,
-  isOpen,
-  setIsOpen,
 }: DefaultToolDisplayProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  
   // Format output for display
   const outputContent = useMemo(() => {
-    if (state.status === "completed" && state.output) {
+    if (state.status === "completed") {
       const output = state.output;
       if (output === null || output === undefined) return "";
       if (typeof output === "string") return output;
@@ -562,8 +566,25 @@ const DefaultToolDisplay = memo(function DefaultToolDisplay({
     if (state.status === "error" && state.error) {
       return state.error;
     }
-    return null;
+    return "";
   }, [state.status, state.output, state.error]);
+
+  const hasOutput = outputContent.length > 0;
+  const hasInput = state.input && Object.keys(state.input).length > 0;
+  const hasContent = hasOutput || hasInput;
+
+  // Non-expandable version when there's no content
+  if (!hasContent) {
+    return (
+      <div className="rounded border border-border bg-muted/50">
+        <div className="px-3 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2">
+          <Terminal className="h-3 w-3" />
+          <span className="font-mono">{tool}</span>
+          <span className="ml-auto">{statusIcon}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <details
@@ -581,30 +602,29 @@ const DefaultToolDisplay = memo(function DefaultToolDisplay({
         <span className="font-mono">{tool}</span>
         <span className="ml-auto">{statusIcon}</span>
       </summary>
-      {/* Only render content when open */}
       {isOpen && (
         <div className="border-t border-border">
           {/* Input */}
-          {state.input && Object.keys(state.input).length > 0 && (
-            <div className="px-3 py-2 border-b border-border">
+          {hasInput && (
+            <div className={cn("px-3 py-2", hasOutput && "border-b border-border")}>
               <div className="text-xs font-medium text-muted-foreground mb-1">
                 Input
               </div>
-              <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded">
+              <pre className="overflow-x-auto text-xs font-mono bg-background p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap">
                 {JSON.stringify(state.input, null, 2)}
               </pre>
             </div>
           )}
 
           {/* Output */}
-          {outputContent && (
+          {hasOutput && (
             <div className="px-3 py-2">
               <div className="text-xs font-medium text-muted-foreground mb-1">
                 {state.status === "error" ? "Error" : "Output"}
               </div>
               <pre
                 className={cn(
-                  "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto",
+                  "overflow-x-auto text-xs font-mono p-2 rounded max-h-64 overflow-y-auto whitespace-pre-wrap",
                   state.status === "error"
                     ? "bg-destructive/10 text-destructive"
                     : "bg-background"

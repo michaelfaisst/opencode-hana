@@ -4,8 +4,9 @@ import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useProviders, type ImageAttachment, type Command } from "@/hooks";
-import { useAppSettingsStore } from "@/stores";
+import { useAppSettingsStore, useUILayoutStore } from "@/stores";
 import { sendCompletionNotification } from "@/lib/notifications";
 
 interface Part {
@@ -93,6 +94,7 @@ export function ChatContainer({
 }: ChatContainerProps) {
   const { data: providersData } = useProviders();
   const { selectedModel, agentMode, toggleAgentMode } = useAppSettingsStore();
+  const { mobileChatSheetOpen, setMobileChatSheetOpen } = useUILayoutStore();
   
   // Message queue for when agent is busy
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
@@ -258,7 +260,7 @@ export function ChatContainer({
         </div>
       </div>
       
-      {/* Sidebar - hidden on small screens */}
+      {/* Desktop sidebar - hidden on small screens */}
       <div className="hidden lg:block shrink-0">
         <ChatSidebar 
           messages={sidebarMessages} 
@@ -268,6 +270,22 @@ export function ChatContainer({
           isBusy={isBusy || isSending}
         />
       </div>
+
+      {/* Mobile chat sidebar sheet */}
+      <Sheet open={mobileChatSheetOpen} onOpenChange={setMobileChatSheetOpen}>
+        <SheetContent side="right" className="w-80 p-0" showCloseButton={false}>
+          <SheetTitle className="sr-only">Session Info</SheetTitle>
+          <ChatSidebar 
+            messages={sidebarMessages} 
+            contextLimit={contextLimit}
+            onCommand={onCommand}
+            hasSession={true}
+            isBusy={isBusy || isSending}
+            className="border-l-0 w-full"
+            forceExpanded
+          />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

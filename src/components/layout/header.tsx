@@ -1,5 +1,4 @@
-import { Moon, Sun, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Moon, Sun, Menu, PanelRight } from "lucide-react";
 import { useTheme } from "@/providers";
 import { THEMES, type Theme } from "@/stores";
 import { Button } from "@/components/ui/button";
@@ -71,41 +70,49 @@ interface HeaderProps {
   sessionTitle?: string;
   children?: React.ReactNode;
   leftContent?: React.ReactNode;
+  onOpenMobileSessionsSheet?: () => void;
+  onOpenMobileChatSheet?: () => void;
 }
 
-export function Header({ title, sessionTitle, children, leftContent }: HeaderProps) {
+export function Header({ 
+  title, 
+  sessionTitle, 
+  children, 
+  leftContent,
+  onOpenMobileSessionsSheet,
+  onOpenMobileChatSheet,
+}: HeaderProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-2 min-w-0 flex-1">
+          {/* Mobile hamburger menu - visible on < lg */}
+          {onOpenMobileSessionsSheet && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9 lg:hidden"
+              onClick={onOpenMobileSessionsSheet}
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open sessions</span>
+            </Button>
+          )}
           {leftContent}
           <Logo className="h-6 w-6 shrink-0" />
           <h1 className="text-lg font-semibold shrink-0">{title || "OpenCode Hana"}</h1>
+          {/* Session title - hidden on mobile */}
           {sessionTitle && (
             <>
-              <span className="text-muted-foreground shrink-0">/</span>
-              <span className="text-sm text-muted-foreground truncate">{sessionTitle}</span>
+              <span className="text-muted-foreground shrink-0 hidden sm:inline">/</span>
+              <span className="text-sm text-muted-foreground truncate hidden sm:inline">{sessionTitle}</span>
             </>
           )}
         </div>
         <div className="flex items-center gap-2">
           {children}
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Link
-                  to="/settings"
-                  className="hidden md:inline-flex items-center justify-center h-9 w-9 rounded-none hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="sr-only">Settings</span>
-                </Link>
-              }
-            />
-            <TooltipContent>Settings</TooltipContent>
-          </Tooltip>
           <DropdownMenu>
             <Tooltip>
               <TooltipTrigger
@@ -152,6 +159,18 @@ export function Header({ title, sessionTitle, children, leftContent }: HeaderPro
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          {/* Mobile chat sidebar toggle - visible on < lg */}
+          {onOpenMobileChatSheet && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9 lg:hidden"
+              onClick={onOpenMobileChatSheet}
+            >
+              <PanelRight className="h-5 w-5" />
+              <span className="sr-only">Open sidebar</span>
+            </Button>
+          )}
         </div>
       </div>
     </header>

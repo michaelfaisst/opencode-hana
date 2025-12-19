@@ -4,6 +4,8 @@ import { createOpencodeClient } from "@opencode-ai/sdk/client";
 // In production, use the configured server URL or same origin
 const serverUrl = import.meta.env.VITE_OPENCODE_SERVER_URL || "";
 
+console.log("[opencode] serverUrl:", serverUrl, "location:", typeof window !== 'undefined' ? window.location.origin : 'no window');
+
 export const opencodeClient = createOpencodeClient({
   baseUrl: serverUrl,
 });

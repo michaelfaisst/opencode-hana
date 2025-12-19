@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { ChatContainer, SessionsSidebar, RenameSessionDialog, McpServersDialog } from "@/components/chat";
 import { CreateSessionDialog } from "@/components/sessions";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
   useSession,
   useSessions,
@@ -26,7 +27,7 @@ import {
   type Command,
 } from "@/hooks";
 import { useSessionStatusFromContext } from "@/providers";
-import { useSessionStore, useAppSettingsStore } from "@/stores";
+import { useSessionStore, useAppSettingsStore, useUILayoutStore } from "@/stores";
 import type { Session } from "@opencode-ai/sdk/client";
 
 // Extend SDK Session type with optional timestamp fields
@@ -48,6 +49,11 @@ export function HomePage() {
     setSelectedModel,
     replaceSessionOnNew,
   } = useAppSettingsStore();
+  const { 
+    mobileSessionsSheetOpen, 
+    setMobileSessionsSheetOpen,
+    setMobileChatSheetOpen,
+  } = useUILayoutStore();
 
   // Fetch all sessions
   const { data: sessions = [], isLoading: isLoadingSessions } = useSessions();
@@ -97,7 +103,7 @@ export function HomePage() {
   );
   const sendMessage = useSendMessage();
   const abortSession = useAbortSession();
-  const { isBusy: isBusyFromSSE, isRetrying, status } = useSessionStatusFromContext(
+  const { isBusy: isBusyFromSSE, isRetrying, status, setSessionIdle } = useSessionStatusFromContext(
     activeSessionId || ""
   );
 
@@ -176,6 +182,9 @@ export function HomePage() {
     if (!activeSessionId) return;
     try {
       await abortSession.mutateAsync(activeSessionId);
+      // Optimistically set the session to idle after successful abort
+      // This prevents the message queue from holding messages if the SSE event is delayed
+      setSessionIdle(activeSessionId);
     } catch (error) {
       console.error("Failed to abort session:", error);
     }
@@ -334,7 +343,11 @@ export function HomePage() {
 
   return (
     <div className="flex h-screen flex-col">
-      <Header sessionTitle={sessionTitle} />
+      <Header 
+        sessionTitle={sessionTitle}
+        onOpenMobileSessionsSheet={() => setMobileSessionsSheetOpen(true)}
+        onOpenMobileChatSheet={() => setMobileChatSheetOpen(true)}
+      />
       <div className="flex-1 flex overflow-hidden">
         {/* Sessions sidebar - hidden on mobile */}
         <div className="hidden lg:block">
@@ -364,6 +377,17 @@ export function HomePage() {
           )}
         </div>
       </div>
+
+      {/* Mobile sessions sheet */}
+      <Sheet open={mobileSessionsSheetOpen} onOpenChange={setMobileSessionsSheetOpen}>
+        <SheetContent side="left" className="w-64 max-w-[85vw] p-0" showCloseButton={false}>
+          <SheetTitle className="sr-only">Sessions</SheetTitle>
+          <SessionsSidebar 
+            forceExpanded 
+            onSessionSelect={() => setMobileSessionsSheetOpen(false)} 
+          />
+        </SheetContent>
+      </Sheet>
 
       {/* Rename session dialog */}
       <RenameSessionDialog

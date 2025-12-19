@@ -14,6 +14,7 @@ export interface EventsHookResult {
   reconnect: () => void;
   disconnect: () => void;
   setSessionBusy: (sessionId: string) => void;
+  setSessionIdle: (sessionId: string) => void;
 }
 
 // Trailing throttle - ensures a final call after the delay
@@ -259,6 +260,15 @@ export function useEvents(): EventsHookResult {
     });
   }, []);
 
+  // Function to manually set a session as idle (called when aborting)
+  const setSessionIdle = useCallback((sessionId: string) => {
+    setState((prev) => {
+      const newStatuses = new Map(prev.sessionStatuses);
+      newStatuses.set(sessionId, { type: "idle" });
+      return { ...prev, sessionStatuses: newStatuses };
+    });
+  }, []);
+
   // Connect once on mount, cleanup on unmount
   useEffect(() => {
     connect();
@@ -274,6 +284,7 @@ export function useEvents(): EventsHookResult {
     reconnect: connect,
     disconnect,
     setSessionBusy,
+    setSessionIdle,
   };
 }
 

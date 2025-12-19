@@ -56,6 +56,8 @@ interface ChatSidebarProps {
   onCommand?: (command: Command) => void;
   hasSession?: boolean;
   isBusy?: boolean;
+  /** When true, always renders expanded and hides collapse controls (for mobile sheet) */
+  forceExpanded?: boolean;
 }
 
 export function ChatSidebar({
@@ -65,27 +67,56 @@ export function ChatSidebar({
   onCommand,
   hasSession = false,
   isBusy = false,
+  forceExpanded = false,
 }: ChatSidebarProps) {
-  const { chatSidebarCollapsed: isCollapsed, toggleChatSidebar } = useUILayoutStore();
+  const { chatSidebarCollapsed, toggleChatSidebar } = useUILayoutStore();
   const { data: mcpServers = [], isLoading: isMcpLoading } = useMcpServers();
   const sections = useSidebarSettingsStore((state) => state.sections);
 
-  // Extract the latest todos from todowrite tool calls
+  // When forceExpanded is true, always render expanded
+  const isCollapsed = forceExpanded ? false : chatSidebarCollapsed;
+
+  // Extract todos from the most recent assistant message that has todowrite calls
+  // This ensures we only show the current task list, not accumulated from all messages
   const todos = useMemo(() => {
     let latestTodos: TodoItem[] = [];
 
-    for (const message of messages) {
+    // Iterate backwards to find the most recent assistant message with todos
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i];
       if (message.role !== "assistant") continue;
 
+      // Check if this message has any todowrite calls
       for (const part of message.parts) {
         if (
           part.type === "tool" &&
           part.tool === "todowrite" &&
           part.state?.input?.todos
         ) {
-          latestTodos = part.state.input.todos;
+          // Found todos in this message - merge by ID within this message
+          // (in case there are multiple todowrite calls in one message)
+          const todosById = new Map<string, TodoItem>();
+          
+          // Continue scanning this message for all todowrite calls
+          for (const p of message.parts) {
+            if (
+              p.type === "tool" &&
+              p.tool === "todowrite" &&
+              p.state?.input?.todos
+            ) {
+              for (const todo of p.state.input.todos) {
+                todosById.set(todo.id, todo);
+              }
+            }
+          }
+          
+          latestTodos = Array.from(todosById.values());
+          break;
         }
       }
+      
+      // If we found todos, stop searching older messages
+      if (latestTodos.length > 0) break;
     }
 
     return latestTodos;
@@ -328,21 +359,24 @@ export function ChatSidebar({
         </span>
         <div className="flex items-center gap-1">
           <SidebarSettingsDialog />
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleChatSidebar}
-                  className="h-6 w-6"
-                >
-                  <PanelRightOpen className="h-4 w-4" />
-                </Button>
-              }
-            />
-            <TooltipContent side="left">Collapse sidebar</TooltipContent>
-          </Tooltip>
+          {/* Hide collapse toggle when forceExpanded */}
+          {!forceExpanded && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleChatSidebar}
+                    className="h-6 w-6"
+                  >
+                    <PanelRightOpen className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <TooltipContent side="left">Collapse sidebar</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
 
