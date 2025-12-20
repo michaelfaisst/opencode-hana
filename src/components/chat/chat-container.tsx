@@ -1,12 +1,22 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { X, Image as ImageIcon, Loader2, RefreshCw } from "lucide-react";
+import {
+    X,
+    Image as ImageIcon,
+    Loader2,
+    RefreshCw,
+    AlertCircle
+} from "lucide-react";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useProviders, type ImageAttachment, type Command } from "@/hooks";
-import { useAppSettingsStore, useUILayoutStore } from "@/stores";
+import {
+    useAppSettingsStore,
+    useUILayoutStore,
+    useSessionStore
+} from "@/stores";
 import { sendCompletionNotification } from "@/lib/notifications";
 
 interface Part {
@@ -95,6 +105,7 @@ export function ChatContainer({
     const { data: providersData } = useProviders();
     const { selectedModel, agentMode, toggleAgentMode } = useAppSettingsStore();
     const { mobileChatSheetOpen, setMobileChatSheetOpen } = useUILayoutStore();
+    const { error: sessionError, clearError } = useSessionStore();
 
     // Message queue for when agent is busy
     const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
@@ -164,6 +175,9 @@ export function ChatContainer({
     // Handle sending message (queue if busy)
     const handleSendMessage = useCallback(
         (text: string, images?: ImageAttachment[]) => {
+            // Clear any existing error when sending a new message
+            clearError();
+
             if (isBusy || isSending) {
                 // Add to queue
                 setMessageQueue((prev) => [
@@ -178,7 +192,7 @@ export function ChatContainer({
                 onSendMessage(text, images);
             }
         },
-        [isBusy, isSending, onSendMessage]
+        [isBusy, isSending, onSendMessage, clearError]
     );
 
     // Remove a queued message
@@ -197,6 +211,32 @@ export function ChatContainer({
                     isBusy={isBusy}
                     isRetrying={isRetrying}
                 />
+
+                {/* Error message display */}
+                {sessionError && (
+                    <div className="flex items-start gap-3 px-4 py-3 bg-destructive/10 border-t border-destructive/20">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/20">
+                            <AlertCircle className="h-4 w-4 text-destructive" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-destructive mb-1">
+                                Error
+                            </div>
+                            <div className="text-sm text-destructive/90 whitespace-pre-wrap">
+                                {sessionError.message}
+                            </div>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/20"
+                            onClick={clearError}
+                        >
+                            <X className="h-3 w-3" />
+                            <span className="sr-only">Dismiss error</span>
+                        </Button>
+                    </div>
+                )}
 
                 {/* Streaming indicator - shown instantly when busy */}
                 {(isBusy || isRetrying) && (

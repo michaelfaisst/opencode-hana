@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MessageSquare, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import {
     ChatContainer,
@@ -183,15 +184,26 @@ export function HomePage() {
         images?: ImageAttachment[]
     ) => {
         if (!activeSessionId || !selectedModel) return;
-        // Get the current agentMode from the store at call time to ensure freshness
-        const currentAgentMode = useAppSettingsStore.getState().agentMode;
-        await sendMessage.mutateAsync({
-            sessionId: activeSessionId,
-            text,
-            images,
-            model: selectedModel,
-            mode: currentAgentMode
-        });
+        // Get the current state from the store at call time to ensure freshness
+        const state = useAppSettingsStore.getState();
+        const currentAgentMode = state.agentMode;
+        const customSystemPrompt = state.assistantPersona.customSystemPrompt;
+        try {
+            await sendMessage.mutateAsync({
+                sessionId: activeSessionId,
+                text,
+                images,
+                model: selectedModel,
+                mode: currentAgentMode,
+                systemPrompt: customSystemPrompt || undefined
+            });
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to send message";
+            toast.error(message);
+        }
     };
 
     const handleAbort = async () => {
@@ -202,7 +214,11 @@ export function HomePage() {
             // This prevents the message queue from holding messages if the SSE event is delayed
             setSessionIdle(activeSessionId);
         } catch (error) {
-            console.error("Failed to abort session:", error);
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to abort session";
+            toast.error(message);
         }
     };
 
@@ -222,7 +238,11 @@ export function HomePage() {
                 navigate(`/sessions/${newSession.id}`);
             }
         } catch (error) {
-            console.error("Failed to create session:", error);
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to create session";
+            toast.error(message);
         }
     };
 
@@ -334,10 +354,11 @@ export function HomePage() {
                         console.warn(`Unknown command: ${command.name}`);
                 }
             } catch (error) {
-                console.error(
-                    `Failed to execute command ${command.name}:`,
-                    error
-                );
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : `Failed to execute command: ${command.name}`;
+                toast.error(message);
             }
         },
         [
@@ -369,7 +390,11 @@ export function HomePage() {
                 });
                 setRenameDialogOpen(false);
             } catch (error) {
-                console.error("Failed to rename session:", error);
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to rename session";
+                toast.error(message);
             }
         },
         [activeSessionId, renameSession]

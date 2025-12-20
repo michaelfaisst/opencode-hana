@@ -1,4 +1,4 @@
-export { useSessionStore } from "./session-store";
+export { useSessionStore, type SessionError } from "./session-store";
 export {
     useAppSettingsStore,
     type AgentMode,

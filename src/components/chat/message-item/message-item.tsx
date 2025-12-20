@@ -1,10 +1,12 @@
 import { User, Bot } from "lucide-react";
 import { MarkdownContent } from "@/components/common/markdown-content";
 import { cn } from "@/lib/utils";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { ReasoningDisplay } from "./reasoning-display";
 import { FileDisplay } from "./file-display";
 import { ToolInvocationDisplay } from "./tool-invocation-display";
+import { useAppSettingsStore } from "@/stores";
+import { useProviders } from "@/hooks";
 import type {
     Part,
     TextPart,
@@ -25,6 +27,32 @@ export const MessageItem = memo(function MessageItem({
     isStreaming
 }: MessageItemProps) {
     const isUser = role === "user";
+    const { assistantPersona, selectedModel } = useAppSettingsStore();
+    const { data: providersData } = useProviders();
+
+    // Compute the assistant display name based on persona settings
+    const assistantName = useMemo(() => {
+        switch (assistantPersona.nameSource) {
+            case "model": {
+                if (!selectedModel || !providersData?.providers) {
+                    return "Assistant";
+                }
+                const provider = providersData.providers.find(
+                    (p) => p.id === selectedModel.providerID
+                );
+                if (!provider?.models) return "Assistant";
+                const model = provider.models[selectedModel.modelID] as
+                    | { name?: string }
+                    | undefined;
+                return model?.name || selectedModel.modelID || "Assistant";
+            }
+            case "custom":
+                return assistantPersona.customName || "Assistant";
+            case "default":
+            default:
+                return "Assistant";
+        }
+    }, [assistantPersona, selectedModel, providersData]);
 
     // Combine text parts (excluding synthetic/ignored ones)
     const textContent = parts
@@ -73,7 +101,7 @@ export const MessageItem = memo(function MessageItem({
         >
             <div
                 className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden",
                     isUser
                         ? "bg-primary text-primary-foreground"
                         : "bg-secondary"
@@ -81,13 +109,19 @@ export const MessageItem = memo(function MessageItem({
             >
                 {isUser ? (
                     <User className="h-4 w-4" />
+                ) : assistantPersona.avatarBase64 ? (
+                    <img
+                        src={assistantPersona.avatarBase64}
+                        alt=""
+                        className="h-full w-full object-cover"
+                    />
                 ) : (
                     <Bot className="h-4 w-4" />
                 )}
             </div>
             <div className="flex-1 space-y-2 overflow-hidden">
                 <div className="text-xs font-medium text-muted-foreground">
-                    {isUser ? "You" : "Assistant"}
+                    {isUser ? "You" : assistantName}
                 </div>
 
                 {/* Reasoning content (collapsible) */}

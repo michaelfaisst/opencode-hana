@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -51,13 +52,16 @@ import {
     Bell,
     Mic,
     Eye,
-    EyeOff
+    EyeOff,
+    User
 } from "lucide-react";
 import {
     requestNotificationPermission,
     getBrowserNotificationPermission,
     previewSound
 } from "@/lib/notifications";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { AvatarUpload } from "@/components/settings";
 
 export function SettingsPage() {
     const navigate = useNavigate();
@@ -69,7 +73,12 @@ export function SettingsPage() {
         voiceInput,
         setVoiceInputEnabled,
         setVoiceInputApiKey,
-        setVoiceInputLanguage
+        setVoiceInputLanguage,
+        assistantPersona,
+        setAssistantNameSource,
+        setAssistantCustomName,
+        setAssistantAvatar,
+        setAssistantSystemPrompt
     } = useAppSettingsStore();
     const {
         notificationsEnabled,
@@ -246,6 +255,118 @@ export function SettingsPage() {
                                 <p className="text-xs text-muted-foreground">
                                     Set via VITE_OPENCODE_SERVER_URL environment
                                     variable
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                Personalization
+                            </CardTitle>
+                            <CardDescription>
+                                Customize how the assistant appears in chat
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Avatar upload */}
+                            <div className="space-y-2">
+                                <Label>Avatar</Label>
+                                <AvatarUpload
+                                    avatarBase64={assistantPersona.avatarBase64}
+                                    onAvatarChange={setAssistantAvatar}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Upload a custom avatar for the assistant
+                                </p>
+                            </div>
+
+                            {/* Name source selection */}
+                            <div className="space-y-3">
+                                <Label>Assistant Name</Label>
+                                <RadioGroup
+                                    value={assistantPersona.nameSource}
+                                    onValueChange={(value) =>
+                                        setAssistantNameSource(
+                                            value as
+                                                | "default"
+                                                | "model"
+                                                | "custom"
+                                        )
+                                    }
+                                    className="space-y-2"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <RadioGroupItem
+                                            value="default"
+                                            id="name-default"
+                                        />
+                                        <Label
+                                            htmlFor="name-default"
+                                            className="font-normal cursor-pointer"
+                                        >
+                                            Use "Assistant"
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <RadioGroupItem
+                                            value="model"
+                                            id="name-model"
+                                        />
+                                        <Label
+                                            htmlFor="name-model"
+                                            className="font-normal cursor-pointer"
+                                        >
+                                            Use model name
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <RadioGroupItem
+                                            value="custom"
+                                            id="name-custom"
+                                        />
+                                        <Label
+                                            htmlFor="name-custom"
+                                            className="font-normal cursor-pointer"
+                                        >
+                                            Custom name
+                                        </Label>
+                                    </div>
+                                </RadioGroup>
+                                {assistantPersona.nameSource === "custom" && (
+                                    <Input
+                                        value={assistantPersona.customName}
+                                        onChange={(e) =>
+                                            setAssistantCustomName(
+                                                e.target.value
+                                            )
+                                        }
+                                        placeholder="Enter a custom name..."
+                                        className="max-w-sm"
+                                    />
+                                )}
+                            </div>
+
+                            {/* Custom system prompt */}
+                            <div className="space-y-2">
+                                <Label htmlFor="system-prompt">
+                                    Custom Instructions
+                                </Label>
+                                <Textarea
+                                    id="system-prompt"
+                                    value={assistantPersona.customSystemPrompt}
+                                    onChange={(e) =>
+                                        setAssistantSystemPrompt(e.target.value)
+                                    }
+                                    placeholder="e.g., Respond like a helpful anime character. Use casual, friendly language..."
+                                    className="min-h-[100px] resize-y"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Add custom instructions to change how the
+                                    assistant behaves and responds. Leave empty
+                                    for default behavior.
                                 </p>
                             </div>
                         </CardContent>

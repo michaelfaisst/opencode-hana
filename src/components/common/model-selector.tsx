@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from "react";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
     Combobox,
     ComboboxSelectTrigger,
@@ -22,6 +23,8 @@ export interface SelectedModel {
     modelID: string;
 }
 
+type ModelStatus = "alpha" | "beta" | "deprecated" | "active";
+
 interface ModelOption {
     providerID: string;
     providerName: string;
@@ -29,6 +32,7 @@ interface ModelOption {
     modelName: string;
     value: string;
     label: string;
+    status: ModelStatus;
 }
 
 interface ModelSelectorProps {
@@ -47,7 +51,7 @@ export function ModelSelector({
     const { data, isLoading } = useProviders();
     const [inputValue, setInputValue] = useState("");
 
-    // Build flat list of model options
+    // Build flat list of model options, filtering out unavailable models
     const allModels = useMemo<ModelOption[]>(() => {
         const providers = data?.providers ?? [];
         const models: ModelOption[] = [];
@@ -56,14 +60,26 @@ export function ModelSelector({
             for (const [modelId, model] of Object.entries(
                 provider.models || {}
             )) {
-                const modelName = (model as { name?: string })?.name || modelId;
+                const typedModel = model as {
+                    name?: string;
+                    status?: ModelStatus;
+                };
+                const modelStatus = typedModel.status ?? "active";
+
+                // Skip deprecated models
+                if (modelStatus === "deprecated") {
+                    continue;
+                }
+
+                const modelName = typedModel.name || modelId;
                 models.push({
                     providerID: provider.id,
                     providerName: provider.name,
                     modelID: modelId,
                     modelName,
                     value: `${provider.id}::${modelId}`,
-                    label: `${provider.name}: ${modelName}`
+                    label: `${provider.name}: ${modelName}`,
+                    status: modelStatus
                 });
             }
         }
@@ -203,8 +219,17 @@ export function ModelSelector({
                                 <ComboboxItem
                                     key={model.value}
                                     value={model.value}
+                                    className="flex items-center justify-between gap-2"
                                 >
-                                    {model.modelName}
+                                    <span>{model.modelName}</span>
+                                    {model.status !== "active" && (
+                                        <Badge
+                                            variant="outline"
+                                            className="text-[10px] px-1 py-0 h-4"
+                                        >
+                                            {model.status}
+                                        </Badge>
+                                    )}
                                 </ComboboxItem>
                             ))}
                             {index < filteredGroupedModels.length - 1 && (

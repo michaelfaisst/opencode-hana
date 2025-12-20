@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { QUERY_KEYS } from "@/lib/constants";
+import { useSessionStore } from "@/stores";
 import type {
     Event,
     Session,
@@ -107,6 +109,28 @@ export function useEvents(): EventsHookResult {
                 }
                 break;
 
+            case "session.error":
+                if ("error" in event.properties && event.properties.error) {
+                    const error = event.properties.error as {
+                        name?: string;
+                        data?: { message?: string; code?: string };
+                    };
+
+                    // Extract message from error.data.message or use error name as fallback
+                    const errorMessage =
+                        error.data?.message ||
+                        error.name ||
+                        "An error occurred";
+
+                    // Set error in session store to display in chat
+                    useSessionStore.getState().setError({
+                        message: errorMessage,
+                        code: error.data?.code,
+                        timestamp: Date.now()
+                    });
+                }
+                break;
+
             // Message events
             case "message.updated":
                 if ("info" in event.properties) {
@@ -207,6 +231,37 @@ export function useEvents(): EventsHookResult {
 
             // Server connection event
             case "server.connected":
+                break;
+
+            // TUI toast events - used by the server to show notifications
+            case "tui.toast.show":
+                if ("message" in event.properties) {
+                    const { message, title, variant } = event.properties as {
+                        message: string;
+                        title?: string;
+                        variant: "info" | "success" | "warning" | "error";
+                    };
+
+                    const toastMessage = title
+                        ? `${title}: ${message}`
+                        : message;
+
+                    switch (variant) {
+                        case "error":
+                            toast.error(toastMessage);
+                            break;
+                        case "warning":
+                            toast.warning(toastMessage);
+                            break;
+                        case "success":
+                            toast.success(toastMessage);
+                            break;
+                        case "info":
+                        default:
+                            toast.info(toastMessage);
+                            break;
+                    }
+                }
                 break;
 
             default:

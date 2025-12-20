@@ -4,6 +4,34 @@ import { QUERY_KEYS } from "@/lib/constants";
 import { getWebSessionInfo } from "./use-sessions";
 import type { AgentMode } from "@/stores";
 
+/**
+ * Extract a user-friendly error message from an API error response.
+ * Handles the OpenCode server error format: { error: { message, code, param, type } }
+ */
+function extractErrorMessage(error: unknown, fallbackMessage: string): string {
+    if (!error || typeof error !== "object") {
+        return fallbackMessage;
+    }
+
+    // Handle { error: { message: string } } format
+    if ("error" in error) {
+        const errorObj = (error as { error: unknown }).error;
+        if (errorObj && typeof errorObj === "object" && "message" in errorObj) {
+            return (errorObj as { message: string }).message;
+        }
+    }
+
+    // Handle { message: string } format
+    if (
+        "message" in error &&
+        typeof (error as { message: unknown }).message === "string"
+    ) {
+        return (error as { message: string }).message;
+    }
+
+    return fallbackMessage;
+}
+
 export function useMessages(sessionId: string) {
     const client = useOpencodeClient();
 
@@ -16,7 +44,12 @@ export function useMessages(sessionId: string) {
                 query: { directory: sessionInfo?.directory }
             });
             if (response.error) {
-                throw new Error("Failed to fetch messages");
+                throw new Error(
+                    extractErrorMessage(
+                        response.error,
+                        "Failed to fetch messages"
+                    )
+                );
             }
             return response.data ?? [];
         },
@@ -44,6 +77,7 @@ interface SendMessageParams {
         modelID: string;
     };
     mode?: AgentMode;
+    systemPrompt?: string;
 }
 
 export function useSendMessage() {
@@ -56,7 +90,8 @@ export function useSendMessage() {
             text,
             images,
             model,
-            mode
+            mode,
+            systemPrompt
         }: SendMessageParams) => {
             if (!model) {
                 throw new Error("No model selected");
@@ -99,11 +134,17 @@ export function useSendMessage() {
                 body: {
                     model,
                     parts,
-                    ...(mode && { agent: mode })
+                    ...(mode && { agent: mode }),
+                    ...(systemPrompt && { system: systemPrompt })
                 }
             });
             if (response.error) {
-                throw new Error("Failed to send message");
+                throw new Error(
+                    extractErrorMessage(
+                        response.error,
+                        "Failed to send message"
+                    )
+                );
             }
             return response.data;
         },
@@ -190,7 +231,12 @@ export function useAbortSession() {
                 query: { directory: sessionInfo?.directory }
             });
             if (response.error) {
-                throw new Error("Failed to abort session");
+                throw new Error(
+                    extractErrorMessage(
+                        response.error,
+                        "Failed to abort session"
+                    )
+                );
             }
             return response.data;
         },

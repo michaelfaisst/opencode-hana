@@ -3,6 +3,8 @@ import { persist } from "zustand/middleware";
 
 export type AgentMode = "plan" | "build";
 
+export type AssistantNameSource = "default" | "model" | "custom";
+
 export interface SelectedModel {
     providerID: string;
     modelID: string;
@@ -14,12 +16,20 @@ export interface VoiceInputSettings {
     language: string;
 }
 
+export interface AssistantPersona {
+    nameSource: AssistantNameSource;
+    customName: string;
+    avatarBase64: string | null;
+    customSystemPrompt: string;
+}
+
 interface AppSettingsStore {
     // Persisted settings
     defaultModel: SelectedModel | null;
     agentMode: AgentMode;
     replaceSessionOnNew: boolean;
     voiceInput: VoiceInputSettings;
+    assistantPersona: AssistantPersona;
 
     // Runtime state (not persisted)
     selectedModel: SelectedModel | null;
@@ -33,6 +43,10 @@ interface AppSettingsStore {
     setVoiceInputEnabled: (enabled: boolean) => void;
     setVoiceInputApiKey: (apiKey: string | null) => void;
     setVoiceInputLanguage: (language: string) => void;
+    setAssistantNameSource: (source: AssistantNameSource) => void;
+    setAssistantCustomName: (name: string) => void;
+    setAssistantAvatar: (base64: string | null) => void;
+    setAssistantSystemPrompt: (prompt: string) => void;
 }
 
 export const useAppSettingsStore = create<AppSettingsStore>()(
@@ -46,6 +60,12 @@ export const useAppSettingsStore = create<AppSettingsStore>()(
                 enabled: false,
                 apiKey: null,
                 language: "en-US"
+            },
+            assistantPersona: {
+                nameSource: "default",
+                customName: "",
+                avatarBase64: null,
+                customSystemPrompt: ""
             },
 
             // Runtime state
@@ -72,6 +92,28 @@ export const useAppSettingsStore = create<AppSettingsStore>()(
             setVoiceInputLanguage: (language) =>
                 set((state) => ({
                     voiceInput: { ...state.voiceInput, language }
+                })),
+            setAssistantNameSource: (nameSource) =>
+                set((state) => ({
+                    assistantPersona: { ...state.assistantPersona, nameSource }
+                })),
+            setAssistantCustomName: (customName) =>
+                set((state) => ({
+                    assistantPersona: { ...state.assistantPersona, customName }
+                })),
+            setAssistantAvatar: (avatarBase64) =>
+                set((state) => ({
+                    assistantPersona: {
+                        ...state.assistantPersona,
+                        avatarBase64
+                    }
+                })),
+            setAssistantSystemPrompt: (customSystemPrompt) =>
+                set((state) => ({
+                    assistantPersona: {
+                        ...state.assistantPersona,
+                        customSystemPrompt
+                    }
                 }))
         }),
         {
@@ -80,7 +122,8 @@ export const useAppSettingsStore = create<AppSettingsStore>()(
                 defaultModel: state.defaultModel,
                 agentMode: state.agentMode,
                 replaceSessionOnNew: state.replaceSessionOnNew,
-                voiceInput: state.voiceInput
+                voiceInput: state.voiceInput,
+                assistantPersona: state.assistantPersona
             })
         }
     )
