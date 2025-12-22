@@ -14,4 +14,10 @@ export interface SessionsSidebarProps {
     forceExpanded?: boolean;
     /** Called when a session is selected (for closing mobile sheet) */
     onSessionSelect?: () => void;
+    /** When true, sidebar is inside Allotment and should use full width */
+    inAllotment?: boolean;
+    /** Collapsed state when controlled by parent (Allotment) */
+    isCollapsed?: boolean;
+    /** Callback when collapse button is clicked (for Allotment integration) */
+    onCollapse?: () => void;
 }

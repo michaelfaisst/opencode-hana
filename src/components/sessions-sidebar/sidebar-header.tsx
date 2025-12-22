@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 interface SidebarHeaderProps {
     isCollapsed: boolean;
     forceExpanded?: boolean;
+    /** When true, show collapse button even if forceExpanded (for Allotment) */
+    inAllotment?: boolean;
     isPending: boolean;
     onCreateClick: () => void;
     onToggleSidebar: () => void;
@@ -18,10 +20,14 @@ interface SidebarHeaderProps {
 export function SidebarHeader({
     isCollapsed,
     forceExpanded,
+    inAllotment,
     isPending,
     onCreateClick,
     onToggleSidebar
 }: SidebarHeaderProps) {
+    // Show collapse button unless forceExpanded without Allotment (mobile sheet)
+    const showCollapseButton = inAllotment || !forceExpanded;
+
     return (
         <div className="flex items-center justify-between p-2 border-b border-border">
             {!isCollapsed && (
@@ -53,8 +59,8 @@ export function SidebarHeader({
                         <TooltipContent>New session</TooltipContent>
                     </Tooltip>
                 )}
-                {/* Hide collapse toggle when forceExpanded */}
-                {!forceExpanded && (
+                {/* Show collapse button unless in mobile sheet (forceExpanded without Allotment) */}
+                {showCollapseButton && (
                     <Tooltip>
                         <TooltipTrigger
                             render={

@@ -48,6 +48,7 @@ export {
     type UseVoiceInputOptions,
     type UseVoiceInputReturn
 } from "./use-voice-input";
+export { useIsDesktop } from "./use-is-desktop";
 
 // Re-export types from stores for backwards compatibility
 export type { SelectedModel, AgentMode } from "@/stores";

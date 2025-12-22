@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/jetbrains-mono";
 @import "react-shiki/css";
+@import "allotment/dist/style.css";
 @import "./themes/index.css";
 
 @custom-variant dark (&:is(.dark *));

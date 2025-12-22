@@ -6,6 +6,10 @@ interface UILayoutStore {
     sessionsSidebarCollapsed: boolean;
     chatSidebarCollapsed: boolean;
 
+    // Sidebar widths for Allotment (persisted)
+    sessionsSidebarWidth: number;
+    chatSidebarWidth: number;
+
     // Mobile sheet states (not persisted)
     mobileSessionsSheetOpen: boolean;
     mobileChatSheetOpen: boolean;
@@ -22,6 +26,10 @@ interface UILayoutStore {
     toggleSection: (key: string) => void;
     isSectionCollapsed: (key: string, defaultOpen?: boolean) => boolean;
 
+    // Sidebar width actions
+    setSessionsSidebarWidth: (width: number) => void;
+    setChatSidebarWidth: (width: number) => void;
+
     // Mobile sheet actions
     setMobileSessionsSheetOpen: (open: boolean) => void;
     setMobileChatSheetOpen: (open: boolean) => void;
@@ -33,6 +41,8 @@ export const useUILayoutStore = create<UILayoutStore>()(
             // Default states
             sessionsSidebarCollapsed: false,
             chatSidebarCollapsed: false,
+            sessionsSidebarWidth: 320,
+            chatSidebarWidth: 288,
             collapsedSections: {},
 
             // Mobile sheet states (not persisted via partialize)
@@ -61,6 +71,11 @@ export const useUILayoutStore = create<UILayoutStore>()(
             setMobileChatSheetOpen: (open) =>
                 set({ mobileChatSheetOpen: open }),
 
+            // Sidebar width actions
+            setSessionsSidebarWidth: (width) =>
+                set({ sessionsSidebarWidth: width }),
+            setChatSidebarWidth: (width) => set({ chatSidebarWidth: width }),
+
             // Collapsible sections
             setSectionCollapsed: (key, collapsed) =>
                 set((state) => ({
@@ -87,10 +102,12 @@ export const useUILayoutStore = create<UILayoutStore>()(
         }),
         {
             name: "opencode-ui-layout",
-            // Only persist sidebar collapsed states and sections, not mobile sheet state
+            // Only persist sidebar collapsed states, widths, and sections, not mobile sheet state
             partialize: (state) => ({
                 sessionsSidebarCollapsed: state.sessionsSidebarCollapsed,
                 chatSidebarCollapsed: state.chatSidebarCollapsed,
+                sessionsSidebarWidth: state.sessionsSidebarWidth,
+                chatSidebarWidth: state.chatSidebarWidth,
                 collapsedSections: state.collapsedSections
             })
         }

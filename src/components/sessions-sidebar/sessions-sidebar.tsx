@@ -24,7 +24,10 @@ import { SessionItem } from "./session-item";
 
 export function SessionsSidebar({
     forceExpanded,
-    onSessionSelect
+    onSessionSelect,
+    inAllotment = false,
+    isCollapsed: isCollapsedProp,
+    onCollapse
 }: SessionsSidebarProps) {
     const navigate = useNavigate();
     const { id: currentSessionId } = useParams<{ id: string }>();
@@ -59,8 +62,24 @@ export function SessionsSidebar({
     const { sessionsSidebarCollapsed, toggleSessionsSidebar } =
         useUILayoutStore();
 
-    // When forceExpanded is true, always render expanded
-    const isCollapsed = forceExpanded ? false : sessionsSidebarCollapsed;
+    // Determine collapsed state:
+    // - If forceExpanded, never collapsed
+    // - If inAllotment, use the prop from parent
+    // - Otherwise use internal store state
+    const isCollapsed = forceExpanded
+        ? false
+        : inAllotment
+          ? (isCollapsedProp ?? false)
+          : sessionsSidebarCollapsed;
+
+    // Handle collapse button click
+    const handleCollapse = () => {
+        if (onCollapse) {
+            onCollapse();
+        } else {
+            toggleSessionsSidebar();
+        }
+    };
 
     // Sort sessions by updatedAt descending
     const sortedSessions = useMemo(() => {
@@ -220,17 +239,23 @@ export function SessionsSidebar({
         <div
             className={cn(
                 "flex flex-col h-full bg-muted/30 transition-all duration-200",
-                forceExpanded ? "w-full" : "border-r border-border",
-                !forceExpanded && (isCollapsed ? "w-12" : "w-80")
+                // Use full width when in Allotment or forceExpanded, otherwise fixed width
+                inAllotment || forceExpanded
+                    ? "w-full"
+                    : "border-r border-border",
+                !inAllotment &&
+                    !forceExpanded &&
+                    (isCollapsed ? "w-12" : "w-80")
             )}
         >
             {/* Header */}
             <SidebarHeader
                 isCollapsed={isCollapsed}
                 forceExpanded={forceExpanded}
+                inAllotment={inAllotment}
                 isPending={createSession.isPending}
                 onCreateClick={() => setCreateDialogOpen(true)}
-                onToggleSidebar={toggleSessionsSidebar}
+                onToggleSidebar={handleCollapse}
             />
 
             {/* Search input (only when expanded) */}

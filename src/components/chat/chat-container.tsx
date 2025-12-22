@@ -87,6 +87,8 @@ interface ChatContainerProps {
     autoFocusInput?: boolean;
     /** Session ID for resetting scroll state on session change */
     sessionId?: string;
+    /** Hide the desktop sidebar (when rendered separately in Allotment) */
+    hideSidebar?: boolean;
 }
 
 export function ChatContainer({
@@ -100,7 +102,8 @@ export function ChatContainer({
     onAbort,
     onCommand,
     autoFocusInput,
-    sessionId
+    sessionId,
+    hideSidebar = false
 }: ChatContainerProps) {
     const { data: providersData } = useProviders();
     const { selectedModel, agentMode, toggleAgentMode } = useAppSettingsStore();
@@ -327,16 +330,18 @@ export function ChatContainer({
                 </div>
             </div>
 
-            {/* Desktop sidebar - hidden on small screens */}
-            <div className="hidden lg:block shrink-0">
-                <ChatSidebar
-                    messages={sidebarMessages}
-                    contextLimit={contextLimit}
-                    onCommand={onCommand}
-                    hasSession={true}
-                    isBusy={isBusy || isSending}
-                />
-            </div>
+            {/* Desktop sidebar - hidden on small screens or when hideSidebar is true */}
+            {!hideSidebar && (
+                <div className="hidden lg:block shrink-0">
+                    <ChatSidebar
+                        messages={sidebarMessages}
+                        contextLimit={contextLimit}
+                        onCommand={onCommand}
+                        hasSession={true}
+                        isBusy={isBusy || isSending}
+                    />
+                </div>
+            )}
 
             {/* Mobile chat sidebar sheet */}
             <Sheet

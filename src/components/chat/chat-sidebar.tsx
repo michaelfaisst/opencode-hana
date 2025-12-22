@@ -66,6 +66,12 @@ interface ChatSidebarProps {
     isBusy?: boolean;
     /** When true, always renders expanded and hides collapse controls (for mobile sheet) */
     forceExpanded?: boolean;
+    /** When true, sidebar is inside Allotment and should use full width */
+    inAllotment?: boolean;
+    /** Collapsed state when controlled by parent (Allotment) */
+    isCollapsed?: boolean;
+    /** Callback when collapse button is clicked (for Allotment integration) */
+    onCollapse?: () => void;
 }
 
 export function ChatSidebar({
@@ -75,14 +81,33 @@ export function ChatSidebar({
     onCommand,
     hasSession = false,
     isBusy = false,
-    forceExpanded = false
+    forceExpanded = false,
+    inAllotment = false,
+    isCollapsed: isCollapsedProp,
+    onCollapse
 }: ChatSidebarProps) {
     const { chatSidebarCollapsed, toggleChatSidebar } = useUILayoutStore();
     const { data: mcpServers = [], isLoading: isMcpLoading } = useMcpServers();
     const sections = useSidebarSettingsStore((state) => state.sections);
 
-    // When forceExpanded is true, always render expanded
-    const isCollapsed = forceExpanded ? false : chatSidebarCollapsed;
+    // Determine collapsed state:
+    // - If forceExpanded, never collapsed
+    // - If inAllotment, use the prop from parent
+    // - Otherwise use internal store state
+    const isCollapsed = forceExpanded
+        ? false
+        : inAllotment
+          ? (isCollapsedProp ?? false)
+          : chatSidebarCollapsed;
+
+    // Handle collapse button click
+    const handleCollapse = () => {
+        if (onCollapse) {
+            onCollapse();
+        } else {
+            toggleChatSidebar();
+        }
+    };
 
     // Extract todos from the most recent assistant message that has todowrite calls
     // This ensures we only show the current task list, not accumulated from all messages
@@ -354,7 +379,7 @@ export function ChatSidebar({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={toggleChatSidebar}
+                                    onClick={handleCollapse}
                                     className="h-6 w-6"
                                 >
                                     <PanelRightClose className="h-4 w-4" />
@@ -373,7 +398,9 @@ export function ChatSidebar({
     return (
         <div
             className={cn(
-                "flex flex-col h-full bg-muted/30 border-l border-border w-72 transition-all duration-200",
+                "flex flex-col h-full bg-muted/30 border-l border-border transition-all duration-200",
+                // Use full width when in Allotment, otherwise fixed width
+                inAllotment ? "w-full" : "w-72",
                 className
             )}
         >
@@ -384,7 +411,7 @@ export function ChatSidebar({
                 </span>
                 <div className="flex items-center gap-1">
                     <SidebarSettingsDialog />
-                    {/* Hide collapse toggle when forceExpanded */}
+                    {/* Hide collapse toggle when forceExpanded (mobile sheet) */}
                     {!forceExpanded && (
                         <Tooltip>
                             <TooltipTrigger
@@ -392,7 +419,7 @@ export function ChatSidebar({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={toggleChatSidebar}
+                                        onClick={handleCollapse}
                                         className="h-6 w-6"
                                     >
                                         <PanelRightOpen className="h-4 w-4" />

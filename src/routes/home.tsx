@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Allotment, type AllotmentHandle } from "allotment";
 import { MessageSquare, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import {
     ChatContainer,
+    ChatSidebar,
     RenameSessionDialog,
     McpServersDialog
 } from "@/components/chat";
@@ -29,6 +31,7 @@ import {
     useSessionCommand,
     useCopySession,
     useExportSession,
+    useIsDesktop,
     SessionNotFoundError,
     type ImageAttachment,
     type Command
@@ -40,6 +43,12 @@ import {
     useUILayoutStore
 } from "@/stores";
 import type { Session } from "@opencode-ai/sdk/client";
+
+// Minimum and maximum sizes for sidebars (in pixels)
+const SESSIONS_SIDEBAR_MIN = 48;
+const SESSIONS_SIDEBAR_MAX = 500;
+const CHAT_SIDEBAR_MIN = 40;
+const CHAT_SIDEBAR_MAX = 500;
 
 // Extend SDK Session type with optional timestamp fields
 type SessionWithTimestamps = Session & {
@@ -63,8 +72,30 @@ export function HomePage() {
     const {
         mobileSessionsSheetOpen,
         setMobileSessionsSheetOpen,
-        setMobileChatSheetOpen
+        setMobileChatSheetOpen,
+        sessionsSidebarWidth,
+        chatSidebarWidth,
+        setSessionsSidebarWidth,
+        setChatSidebarWidth
     } = useUILayoutStore();
+
+    // Check if we're on desktop (for Allotment layout)
+    const isDesktop = useIsDesktop();
+
+    // Ref for Allotment to handle resize
+    const allotmentRef = useRef<AllotmentHandle>(null);
+
+    // Track current pane sizes for detecting collapsed state
+    const [paneSizes, setPaneSizes] = useState<number[]>([
+        sessionsSidebarWidth,
+        0, // main content - will be calculated by Allotment
+        chatSidebarWidth
+    ]);
+
+    // Determine if sidebars are collapsed based on current pane sizes
+    const isSessionsSidebarCollapsed =
+        paneSizes[0] <= SESSIONS_SIDEBAR_MIN + 10; // 10px tolerance
+    const isChatSidebarCollapsed = paneSizes[2] <= CHAT_SIDEBAR_MIN + 10;
 
     // Fetch all sessions
     const { data: sessions = [], isLoading: isLoadingSessions } = useSessions();
@@ -133,6 +164,43 @@ export function HomePage() {
     // Determine busy state:
     // Trust the SSE status - show indicator from session start until session.idle event
     const isBusy = isBusyFromSSE;
+
+    // Get context limit for the selected model (for ChatSidebar when rendered separately)
+    const contextLimit = useMemo(() => {
+        if (!selectedModel || !providersData?.providers) return undefined;
+
+        const provider = providersData.providers.find(
+            (p) => p.id === selectedModel.providerID
+        );
+        if (!provider?.models) return undefined;
+
+        const model = provider.models[selectedModel.modelID] as
+            | {
+                  limit?: { context?: number };
+              }
+            | undefined;
+
+        return model?.limit?.context;
+    }, [selectedModel, providersData]);
+
+    // Convert messages to format expected by ChatSidebar
+    const sidebarMessages = useMemo(() => {
+        return messages.map((m) => ({
+            role: m.info.role,
+            parts: m.parts,
+            tokens: (
+                m.info as {
+                    tokens?: {
+                        input: number;
+                        output: number;
+                        reasoning: number;
+                        cache: { read: number; write: number };
+                    };
+                }
+            ).tokens,
+            cost: (m.info as { cost?: number }).cost
+        }));
+    }, [messages]);
 
     // Command hooks
     const revertSession = useRevertSession();
@@ -400,12 +468,133 @@ export function HomePage() {
         [activeSessionId, renameSession]
     );
 
+    // Handle Allotment resize - track live sizes
+    const handleAllotmentChange = useCallback((sizes: number[]) => {
+        if (sizes.length >= 3) {
+            setPaneSizes(sizes);
+        }
+    }, []);
+
+    // Persist sizes to store when drag ends
+    // Note: Allotment's onDragEnd doesn't pass sizes, so we use paneSizes from state
+    const handleAllotmentDragEnd = useCallback(() => {
+        if (paneSizes.length >= 3) {
+            // Only persist if not collapsed (snapped)
+            if (paneSizes[0] > SESSIONS_SIDEBAR_MIN + 10) {
+                setSessionsSidebarWidth(paneSizes[0]);
+            }
+            if (paneSizes[2] > CHAT_SIDEBAR_MIN + 10) {
+                setChatSidebarWidth(paneSizes[2]);
+            }
+        }
+    }, [paneSizes, setSessionsSidebarWidth, setChatSidebarWidth]);
+
+    // Handle collapse for sessions sidebar (in Allotment)
+    // Toggle between minimum size and stored width
+    const handleSessionsSidebarCollapse = useCallback(() => {
+        if (!allotmentRef.current) return;
+
+        // Get current sizes for all 3 panes
+        const currentSessionsWidth = paneSizes[0] || sessionsSidebarWidth;
+        const currentMainWidth = paneSizes[1] || 0;
+        const currentChatWidth = paneSizes[2] || chatSidebarWidth;
+
+        if (!isSessionsSidebarCollapsed) {
+            // Collapse: reduce sessions sidebar, give extra space to main content
+            const widthDiff = currentSessionsWidth - SESSIONS_SIDEBAR_MIN;
+            allotmentRef.current.resize([
+                SESSIONS_SIDEBAR_MIN,
+                currentMainWidth + widthDiff,
+                currentChatWidth
+            ]);
+        } else {
+            // Expand: increase sessions sidebar, take space from main content
+            const expandedWidth =
+                sessionsSidebarWidth > SESSIONS_SIDEBAR_MIN + 10
+                    ? sessionsSidebarWidth
+                    : 320;
+            const widthDiff = expandedWidth - SESSIONS_SIDEBAR_MIN;
+            allotmentRef.current.resize([
+                expandedWidth,
+                currentMainWidth - widthDiff,
+                currentChatWidth
+            ]);
+        }
+    }, [
+        isSessionsSidebarCollapsed,
+        sessionsSidebarWidth,
+        chatSidebarWidth,
+        paneSizes
+    ]);
+
+    // Handle collapse for chat sidebar (in Allotment)
+    const handleChatSidebarCollapse = useCallback(() => {
+        if (!allotmentRef.current) return;
+
+        // Get current sizes for all 3 panes
+        const currentSessionsWidth = paneSizes[0] || sessionsSidebarWidth;
+        const currentMainWidth = paneSizes[1] || 0;
+        const currentChatWidth = paneSizes[2] || chatSidebarWidth;
+
+        if (!isChatSidebarCollapsed) {
+            // Collapse: reduce chat sidebar, give extra space to main content
+            const widthDiff = currentChatWidth - CHAT_SIDEBAR_MIN;
+            allotmentRef.current.resize([
+                currentSessionsWidth,
+                currentMainWidth + widthDiff,
+                CHAT_SIDEBAR_MIN
+            ]);
+        } else {
+            // Expand: increase chat sidebar, take space from main content
+            const expandedWidth =
+                chatSidebarWidth > CHAT_SIDEBAR_MIN + 10
+                    ? chatSidebarWidth
+                    : 288;
+            const widthDiff = expandedWidth - CHAT_SIDEBAR_MIN;
+            allotmentRef.current.resize([
+                currentSessionsWidth,
+                currentMainWidth - widthDiff,
+                expandedWidth
+            ]);
+        }
+    }, [
+        isChatSidebarCollapsed,
+        chatSidebarWidth,
+        sessionsSidebarWidth,
+        paneSizes
+    ]);
+
     const sessionTitle =
         session?.title ||
         (activeSessionId
             ? `Session ${activeSessionId.slice(0, 8)}`
             : undefined);
     const hasNoSessions = !isLoadingSessions && sortedSessions.length === 0;
+
+    // Main content component (reused in both layouts)
+    const mainContent = hasNoSessions ? (
+        <EmptyState
+            onCreateSession={handleCreateSession}
+            isLoading={createSession.isPending}
+        />
+    ) : (
+        <ErrorBoundary inline className="h-full">
+            <ChatContainer
+                messages={messages}
+                isLoadingMessages={isLoadingSession || isLoadingMessages}
+                isSending={sendMessage.isPending}
+                isBusy={isBusy}
+                isRetrying={isRetrying}
+                retryStatus={status.type === "retry" ? status : undefined}
+                onSendMessage={handleSendMessage}
+                onAbort={handleAbort}
+                onCommand={handleCommand}
+                autoFocusInput={messages.length === 0}
+                sessionId={activeSessionId || undefined}
+                hideSidebar={isDesktop}
+            />
+        </ErrorBoundary>
+    );
 
     return (
         <div className="flex h-dvh flex-col">
@@ -416,41 +605,54 @@ export function HomePage() {
                 }
                 onOpenMobileChatSheet={() => setMobileChatSheetOpen(true)}
             />
-            <div className="flex-1 flex overflow-hidden">
-                {/* Sessions sidebar - hidden on mobile */}
-                <div className="hidden lg:block">
-                    <SessionsSidebar />
-                </div>
-                {/* Main content area */}
-                <div className="flex-1 overflow-hidden">
-                    {hasNoSessions ? (
-                        <EmptyState
-                            onCreateSession={handleCreateSession}
-                            isLoading={createSession.isPending}
+
+            {isDesktop ? (
+                /* Desktop layout with resizable Allotment panes */
+                <Allotment
+                    ref={allotmentRef}
+                    className="flex-1"
+                    onChange={handleAllotmentChange}
+                    onDragEnd={handleAllotmentDragEnd}
+                >
+                    {/* Sessions sidebar pane */}
+                    <Allotment.Pane
+                        minSize={SESSIONS_SIDEBAR_MIN}
+                        maxSize={SESSIONS_SIDEBAR_MAX}
+                        preferredSize={sessionsSidebarWidth}
+                    >
+                        <SessionsSidebar
+                            inAllotment
+                            isCollapsed={isSessionsSidebarCollapsed}
+                            onCollapse={handleSessionsSidebarCollapse}
                         />
-                    ) : (
-                        <ErrorBoundary inline className="h-full">
-                            <ChatContainer
-                                messages={messages}
-                                isLoadingMessages={
-                                    isLoadingSession || isLoadingMessages
-                                }
-                                isSending={sendMessage.isPending}
-                                isBusy={isBusy}
-                                isRetrying={isRetrying}
-                                retryStatus={
-                                    status.type === "retry" ? status : undefined
-                                }
-                                onSendMessage={handleSendMessage}
-                                onAbort={handleAbort}
-                                onCommand={handleCommand}
-                                autoFocusInput={messages.length === 0}
-                                sessionId={activeSessionId || undefined}
-                            />
-                        </ErrorBoundary>
-                    )}
-                </div>
-            </div>
+                    </Allotment.Pane>
+
+                    {/* Main chat content pane */}
+                    <Allotment.Pane>{mainContent}</Allotment.Pane>
+
+                    {/* Chat sidebar pane */}
+                    <Allotment.Pane
+                        minSize={CHAT_SIDEBAR_MIN}
+                        maxSize={CHAT_SIDEBAR_MAX}
+                        preferredSize={chatSidebarWidth}
+                    >
+                        <ChatSidebar
+                            messages={sidebarMessages}
+                            contextLimit={contextLimit}
+                            onCommand={handleCommand}
+                            hasSession={!!activeSessionId && !hasNoSessions}
+                            isBusy={isBusy || sendMessage.isPending}
+                            inAllotment
+                            isCollapsed={isChatSidebarCollapsed}
+                            onCollapse={handleChatSidebarCollapse}
+                            className="h-full border-l-0"
+                        />
+                    </Allotment.Pane>
+                </Allotment>
+            ) : (
+                /* Mobile layout - simple flex container */
+                <div className="flex-1 overflow-hidden">{mainContent}</div>
+            )}
 
             {/* Mobile sessions sheet */}
             <Sheet
