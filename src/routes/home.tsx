@@ -5,10 +5,10 @@ import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import {
     ChatContainer,
-    SessionsSidebar,
     RenameSessionDialog,
     McpServersDialog
 } from "@/components/chat";
+import { SessionsSidebar } from "@/components/sessions-sidebar";
 import { CreateSessionDialog } from "@/components/sessions";
 import { ErrorBoundary } from "@/components/common";
 import { Button } from "@/components/ui/button";

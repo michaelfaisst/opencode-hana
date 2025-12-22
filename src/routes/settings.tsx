@@ -68,8 +68,12 @@ export function SettingsPage() {
     const {
         defaultModel,
         replaceSessionOnNew,
+        showMessageTimestamps,
+        showSessionTimestamps,
         setDefaultModel,
         setReplaceSessionOnNew,
+        setShowMessageTimestamps,
+        setShowSessionTimestamps,
         voiceInput,
         setVoiceInputEnabled,
         setVoiceInputApiKey,
@@ -504,7 +508,7 @@ export function SettingsPage() {
                                 Configure how sessions are managed
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-4">
                             <div className="flex items-center gap-4 max-w-lg">
                                 <div className="flex-1 space-y-0.5">
                                     <Label htmlFor="replace-session">
@@ -521,6 +525,37 @@ export function SettingsPage() {
                                     id="replace-session"
                                     checked={replaceSessionOnNew}
                                     onCheckedChange={setReplaceSessionOnNew}
+                                />
+                            </div>
+                            <div className="flex items-center gap-4 max-w-lg">
+                                <div className="flex-1 space-y-0.5">
+                                    <Label htmlFor="show-timestamps">
+                                        Show message timestamps
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Display the time each message was sent
+                                    </p>
+                                </div>
+                                <Switch
+                                    id="show-timestamps"
+                                    checked={showMessageTimestamps}
+                                    onCheckedChange={setShowMessageTimestamps}
+                                />
+                            </div>
+                            <div className="flex items-center gap-4 max-w-lg">
+                                <div className="flex-1 space-y-0.5">
+                                    <Label htmlFor="show-session-timestamps">
+                                        Show session timestamps
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Display created and updated times in the
+                                        sessions sidebar
+                                    </p>
+                                </div>
+                                <Switch
+                                    id="show-session-timestamps"
+                                    checked={showSessionTimestamps}
+                                    onCheckedChange={setShowSessionTimestamps}
                                 />
                             </div>
                         </CardContent>

@@ -1,6 +1,7 @@
 import { User, Bot } from "lucide-react";
 import { MarkdownContent } from "@/components/common/markdown-content";
 import { cn } from "@/lib/utils";
+import { formatTimestamp } from "@/lib/format";
 import { memo, useMemo } from "react";
 import { ReasoningDisplay } from "./reasoning-display";
 import { FileDisplay } from "./file-display";
@@ -19,15 +20,18 @@ interface MessageItemProps {
     role: "user" | "assistant";
     parts: Part[];
     isStreaming?: boolean;
+    createdAt?: number;
 }
 
 export const MessageItem = memo(function MessageItem({
     role,
     parts,
-    isStreaming
+    isStreaming,
+    createdAt
 }: MessageItemProps) {
     const isUser = role === "user";
-    const { assistantPersona, selectedModel } = useAppSettingsStore();
+    const { assistantPersona, selectedModel, showMessageTimestamps } =
+        useAppSettingsStore();
     const { data: providersData } = useProviders();
 
     // Compute the assistant display name based on persona settings
@@ -122,6 +126,11 @@ export const MessageItem = memo(function MessageItem({
             <div className="flex-1 space-y-2 overflow-hidden">
                 <div className="text-xs font-medium text-muted-foreground">
                     {isUser ? "You" : assistantName}
+                    {showMessageTimestamps && createdAt && (
+                        <span className="ml-2 font-normal opacity-70">
+                            {formatTimestamp(createdAt)}
+                        </span>
+                    )}
                 </div>
 
                 {/* Reasoning content (collapsible) */}

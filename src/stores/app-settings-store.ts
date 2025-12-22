@@ -28,6 +28,8 @@ interface AppSettingsStore {
     defaultModel: SelectedModel | null;
     agentMode: AgentMode;
     replaceSessionOnNew: boolean;
+    showMessageTimestamps: boolean;
+    showSessionTimestamps: boolean;
     voiceInput: VoiceInputSettings;
     assistantPersona: AssistantPersona;
 
@@ -40,6 +42,8 @@ interface AppSettingsStore {
     setAgentMode: (mode: AgentMode) => void;
     toggleAgentMode: () => void;
     setReplaceSessionOnNew: (replace: boolean) => void;
+    setShowMessageTimestamps: (show: boolean) => void;
+    setShowSessionTimestamps: (show: boolean) => void;
     setVoiceInputEnabled: (enabled: boolean) => void;
     setVoiceInputApiKey: (apiKey: string | null) => void;
     setVoiceInputLanguage: (language: string) => void;
@@ -56,6 +60,8 @@ export const useAppSettingsStore = create<AppSettingsStore>()(
             defaultModel: null,
             agentMode: "build",
             replaceSessionOnNew: false,
+            showMessageTimestamps: false,
+            showSessionTimestamps: true,
             voiceInput: {
                 enabled: false,
                 apiKey: null,
@@ -81,6 +87,10 @@ export const useAppSettingsStore = create<AppSettingsStore>()(
                 })),
             setReplaceSessionOnNew: (replace) =>
                 set({ replaceSessionOnNew: replace }),
+            setShowMessageTimestamps: (show) =>
+                set({ showMessageTimestamps: show }),
+            setShowSessionTimestamps: (show) =>
+                set({ showSessionTimestamps: show }),
             setVoiceInputEnabled: (enabled) =>
                 set((state) => ({
                     voiceInput: { ...state.voiceInput, enabled }
@@ -122,6 +132,8 @@ export const useAppSettingsStore = create<AppSettingsStore>()(
                 defaultModel: state.defaultModel,
                 agentMode: state.agentMode,
                 replaceSessionOnNew: state.replaceSessionOnNew,
+                showMessageTimestamps: state.showMessageTimestamps,
+                showSessionTimestamps: state.showSessionTimestamps,
                 voiceInput: state.voiceInput,
                 assistantPersona: state.assistantPersona
             })

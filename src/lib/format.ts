@@ -27,7 +27,8 @@ export function getTimeAgo(date: Date): string {
 }
 
 /**
- * Get a short "time ago" string (without "ago" suffix)
+ * Get a short "time ago" string without the "ago" suffix
+ * e.g., "30m", "3h", "2d"
  */
 export function getTimeAgoShort(date: Date): string {
     const now = new Date();
@@ -42,4 +43,41 @@ export function getTimeAgoShort(date: Date): string {
     if (diffDays < 7) return `${diffDays}d`;
 
     return date.toLocaleDateString();
+}
+
+/**
+ * Formats a timestamp for display.
+ * - Today: time only (e.g., "2:34 PM")
+ * - This year but not today: month + day + time (e.g., "Dec 20, 2:34 PM")
+ * - Different year: month + day + year + time (e.g., "Dec 20, 2024, 2:34 PM")
+ */
+export function formatTimestamp(timestamp: number): string {
+    const date = new Date(timestamp);
+    const now = new Date();
+
+    const isToday =
+        date.getDate() === now.getDate() &&
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear();
+
+    const isThisYear = date.getFullYear() === now.getFullYear();
+
+    const timeStr = date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    if (isToday) {
+        return timeStr;
+    }
+
+    const dateOptions: Intl.DateTimeFormatOptions = {
+        month: "short",
+        day: "numeric",
+        ...(isThisYear ? {} : { year: "numeric" })
+    };
+
+    const dateStr = date.toLocaleDateString([], dateOptions);
+
+    return `${dateStr}, ${timeStr}`;
 }

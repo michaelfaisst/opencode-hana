@@ -1,6 +1,5 @@
 export { ChatContainer } from "./chat-container";
 export { ChatSidebar } from "./chat-sidebar";
-export { SessionsSidebar } from "./sessions-sidebar";
 export { MessageList } from "./message-list";
 export { MessageItem } from "./message-item";
 export { MessageInput } from "./message-input";

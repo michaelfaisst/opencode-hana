@@ -83,6 +83,50 @@ export const MarkdownContent = memo(function MarkdownContent({
                                 {children}
                             </a>
                         );
+                    },
+                    table({ children }) {
+                        return (
+                            <div className="mb-6 overflow-x-auto">
+                                <table className="min-w-full border-collapse text-sm">
+                                    {children}
+                                </table>
+                            </div>
+                        );
+                    },
+                    thead({ children }) {
+                        return (
+                            <thead className="border-b border-border bg-muted/50">
+                                {children}
+                            </thead>
+                        );
+                    },
+                    tbody({ children }) {
+                        return (
+                            <tbody className="divide-y divide-border">
+                                {children}
+                            </tbody>
+                        );
+                    },
+                    tr({ children }) {
+                        return (
+                            <tr className="border-b border-border last:border-0">
+                                {children}
+                            </tr>
+                        );
+                    },
+                    th({ children }) {
+                        return (
+                            <th className="px-3 py-2 text-left font-semibold text-foreground">
+                                {children}
+                            </th>
+                        );
+                    },
+                    td({ children }) {
+                        return (
+                            <td className="px-3 py-2 text-muted-foreground">
+                                {children}
+                            </td>
+                        );
                     }
                 }}
             >

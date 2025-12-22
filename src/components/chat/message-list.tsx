@@ -28,6 +28,9 @@ interface Message {
     info: {
         id: string;
         role: "user" | "assistant";
+        time?: {
+            created?: number;
+        };
     };
     parts: Part[];
 }
@@ -272,6 +275,7 @@ export function MessageList({
                         key={message.info.id}
                         role={message.info.role}
                         parts={message.parts}
+                        createdAt={message.info.time?.created}
                     />
                 ))}
             </div>

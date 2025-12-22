@@ -12,6 +12,7 @@
 - When in doubt, ask the user for their preferences.
 - Don't commit code if you are not explicitly instructed to do so.
 - When you're asked to commit code, use conventional commit messages.
+- If possible, only create on component per file.
 
 ## Development Philosophy
 
