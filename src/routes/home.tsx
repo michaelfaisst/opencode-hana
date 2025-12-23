@@ -582,7 +582,10 @@ export function HomePage() {
             <ChatContainer
                 messages={messages}
                 isLoadingMessages={isLoadingSession || isLoadingMessages}
-                isSending={sendMessage.isPending}
+                isSending={
+                    sendMessage.isPending &&
+                    sendMessage.variables?.sessionId === activeSessionId
+                }
                 isBusy={isBusy}
                 isRetrying={isRetrying}
                 retryStatus={status.type === "retry" ? status : undefined}
@@ -641,7 +644,12 @@ export function HomePage() {
                             contextLimit={contextLimit}
                             onCommand={handleCommand}
                             hasSession={!!activeSessionId && !hasNoSessions}
-                            isBusy={isBusy || sendMessage.isPending}
+                            isBusy={
+                                isBusy ||
+                                (sendMessage.isPending &&
+                                    sendMessage.variables?.sessionId ===
+                                        activeSessionId)
+                            }
                             inAllotment
                             isCollapsed={isChatSidebarCollapsed}
                             onCollapse={handleChatSidebarCollapse}

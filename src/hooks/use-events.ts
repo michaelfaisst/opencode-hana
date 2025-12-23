@@ -2,7 +2,8 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { QUERY_KEYS } from "@/lib/constants";
-import { useSessionStore } from "@/stores";
+import { sendCompletionNotification } from "@/lib/notifications";
+import { useSessionStore, useMessageQueueStore } from "@/stores";
 import type {
     Event,
     Session,
@@ -14,6 +15,11 @@ import type {
 interface EventState {
     isConnected: boolean;
     sessionStatuses: Map<string, SessionStatus>;
+}
+
+export interface UseEventsOptions {
+    navigateToSession?: (sessionId: string) => void;
+    getSessionTitle?: (sessionId: string) => string | undefined;
 }
 
 export interface EventsHookResult {
@@ -70,7 +76,7 @@ function createTrailingThrottle(delay: number) {
  * Uses native EventSource for reliable browser SSE handling
  * Automatically invalidates queries when relevant events are received
  */
-export function useEvents(): EventsHookResult {
+export function useEvents(options?: UseEventsOptions): EventsHookResult {
     const queryClient = useQueryClient();
     const eventSourceRef = useRef<EventSource | null>(null);
     const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -80,6 +86,9 @@ export function useEvents(): EventsHookResult {
         isConnected: false,
         sessionStatuses: new Map()
     });
+
+    // Track which sessions are busy (for transition detection to trigger notifications)
+    const busySessionsRef = useRef<Set<string>>(new Set());
 
     // Use ref for queryClient to avoid reconnection loops
     const queryClientRef = useRef(queryClient);
@@ -91,183 +100,232 @@ export function useEvents(): EventsHookResult {
     // Uses trailing throttle to ensure final update is always applied
     const messageThrottleRef = useRef(createTrailingThrottle(200));
 
-    const handleEvent = useCallback((event: Event) => {
-        const qc = queryClientRef.current;
-        const throttle = messageThrottleRef.current;
+    const handleEvent = useCallback(
+        (event: Event) => {
+            const qc = queryClientRef.current;
+            const throttle = messageThrottleRef.current;
 
-        switch (event.type) {
-            // Session events
-            case "session.created":
-            case "session.updated":
-            case "session.deleted":
-                qc.invalidateQueries({ queryKey: QUERY_KEYS.sessions });
-                if ("info" in event.properties) {
-                    const session = event.properties.info as Session;
-                    qc.invalidateQueries({
-                        queryKey: QUERY_KEYS.session(session.id)
-                    });
-                }
-                break;
-
-            case "session.error":
-                if ("error" in event.properties && event.properties.error) {
-                    const error = event.properties.error as {
-                        name?: string;
-                        data?: { message?: string; code?: string };
-                    };
-
-                    // Extract message from error.data.message or use error name as fallback
-                    const errorMessage =
-                        error.data?.message ||
-                        error.name ||
-                        "An error occurred";
-
-                    // Set error in session store to display in chat
-                    useSessionStore.getState().setError({
-                        message: errorMessage,
-                        code: error.data?.code,
-                        timestamp: Date.now()
-                    });
-                }
-                break;
-
-            // Message events
-            case "message.updated":
-                if ("info" in event.properties) {
-                    const message = event.properties.info as Message;
-                    qc.invalidateQueries({
-                        queryKey: QUERY_KEYS.messages(message.sessionID),
-                        refetchType: "all"
-                    });
-                }
-                break;
-
-            case "message.removed":
-                if ("sessionID" in event.properties) {
-                    qc.invalidateQueries({
-                        queryKey: QUERY_KEYS.messages(
-                            event.properties.sessionID
-                        ),
-                        refetchType: "all"
-                    });
-                }
-                break;
-
-            // Message part events (for streaming) - throttled to avoid spam
-            case "message.part.updated":
-                if ("part" in event.properties) {
-                    const part = event.properties.part as Part;
-                    throttle(`messages:${part.sessionID}`, () => {
+            switch (event.type) {
+                // Session events
+                case "session.created":
+                case "session.updated":
+                    qc.invalidateQueries({ queryKey: QUERY_KEYS.sessions });
+                    if ("info" in event.properties) {
+                        const session = event.properties.info as Session;
                         qc.invalidateQueries({
-                            queryKey: QUERY_KEYS.messages(part.sessionID)
+                            queryKey: QUERY_KEYS.session(session.id)
                         });
-                    });
-                }
-                break;
+                    }
+                    break;
 
-            case "message.part.removed":
-                if ("sessionID" in event.properties) {
-                    throttle(`messages:${event.properties.sessionID}`, () => {
+                case "session.deleted":
+                    qc.invalidateQueries({ queryKey: QUERY_KEYS.sessions });
+                    if ("info" in event.properties) {
+                        const session = event.properties.info as Session;
+                        qc.invalidateQueries({
+                            queryKey: QUERY_KEYS.session(session.id)
+                        });
+                        // Clear message queue for deleted session
+                        useMessageQueueStore.getState().clearQueue(session.id);
+                    }
+                    break;
+
+                case "session.error":
+                    if ("error" in event.properties && event.properties.error) {
+                        const error = event.properties.error as {
+                            name?: string;
+                            data?: { message?: string; code?: string };
+                        };
+
+                        // Extract message from error.data.message or use error name as fallback
+                        const errorMessage =
+                            error.data?.message ||
+                            error.name ||
+                            "An error occurred";
+
+                        // Set error in session store to display in chat
+                        useSessionStore.getState().setError({
+                            message: errorMessage,
+                            code: error.data?.code,
+                            timestamp: Date.now()
+                        });
+                    }
+                    break;
+
+                // Message events
+                case "message.updated":
+                    if ("info" in event.properties) {
+                        const message = event.properties.info as Message;
+                        qc.invalidateQueries({
+                            queryKey: QUERY_KEYS.messages(message.sessionID),
+                            refetchType: "all"
+                        });
+                    }
+                    break;
+
+                case "message.removed":
+                    if ("sessionID" in event.properties) {
+                        qc.invalidateQueries({
+                            queryKey: QUERY_KEYS.messages(
+                                event.properties.sessionID
+                            ),
+                            refetchType: "all"
+                        });
+                    }
+                    break;
+
+                // Message part events (for streaming) - throttled to avoid spam
+                case "message.part.updated":
+                    if ("part" in event.properties) {
+                        const part = event.properties.part as Part;
+                        throttle(`messages:${part.sessionID}`, () => {
+                            qc.invalidateQueries({
+                                queryKey: QUERY_KEYS.messages(part.sessionID)
+                            });
+                        });
+                    }
+                    break;
+
+                case "message.part.removed":
+                    if ("sessionID" in event.properties) {
+                        throttle(
+                            `messages:${event.properties.sessionID}`,
+                            () => {
+                                qc.invalidateQueries({
+                                    queryKey: QUERY_KEYS.messages(
+                                        event.properties.sessionID
+                                    )
+                                });
+                            }
+                        );
+                    }
+                    break;
+
+                // Session status events
+                case "session.status":
+                    if (
+                        "sessionID" in event.properties &&
+                        "status" in event.properties
+                    ) {
+                        const sessionId = event.properties.sessionID;
+                        const status = event.properties.status;
+
+                        // Track busy sessions for notification transition detection
+                        // Only track "busy" status, not "retry" (per user preference)
+                        if (status.type === "busy") {
+                            busySessionsRef.current.add(sessionId);
+                        }
+
+                        setState((prev) => {
+                            const newStatuses = new Map(prev.sessionStatuses);
+                            newStatuses.set(sessionId, status);
+                            return { ...prev, sessionStatuses: newStatuses };
+                        });
+                    }
+                    break;
+
+                case "session.idle":
+                    if ("sessionID" in event.properties) {
+                        const sessionId = event.properties.sessionID;
+
+                        // Check if this session was busy (transition from busy -> idle)
+                        // This triggers a completion notification
+                        if (busySessionsRef.current.has(sessionId)) {
+                            busySessionsRef.current.delete(sessionId);
+
+                            // Get session title for notification message
+                            const sessionTitle =
+                                options?.getSessionTitle?.(sessionId);
+                            const displayName =
+                                sessionTitle ||
+                                `Session ${sessionId.slice(0, 8)}`;
+
+                            sendCompletionNotification({
+                                title: "OpenCode",
+                                body: `"${displayName}" has finished responding`,
+                                onClick: () => {
+                                    options?.navigateToSession?.(sessionId);
+                                }
+                            });
+                        }
+
+                        setState((prev) => {
+                            const newStatuses = new Map(prev.sessionStatuses);
+                            newStatuses.set(sessionId, {
+                                type: "idle"
+                            });
+                            return { ...prev, sessionStatuses: newStatuses };
+                        });
+                        // Refresh messages when session becomes idle
+                        qc.invalidateQueries({
+                            queryKey: QUERY_KEYS.messages(sessionId)
+                        });
+                    }
+                    break;
+
+                // Session compaction
+                case "session.compacted":
+                    if ("sessionID" in event.properties) {
                         qc.invalidateQueries({
                             queryKey: QUERY_KEYS.messages(
                                 event.properties.sessionID
                             )
                         });
-                    });
-                }
-                break;
-
-            // Session status events
-            case "session.status":
-                if (
-                    "sessionID" in event.properties &&
-                    "status" in event.properties
-                ) {
-                    setState((prev) => {
-                        const newStatuses = new Map(prev.sessionStatuses);
-                        newStatuses.set(
-                            event.properties.sessionID,
-                            event.properties.status
-                        );
-                        return { ...prev, sessionStatuses: newStatuses };
-                    });
-                }
-                break;
-
-            case "session.idle":
-                if ("sessionID" in event.properties) {
-                    setState((prev) => {
-                        const newStatuses = new Map(prev.sessionStatuses);
-                        newStatuses.set(event.properties.sessionID, {
-                            type: "idle"
-                        });
-                        return { ...prev, sessionStatuses: newStatuses };
-                    });
-                    // Refresh messages when session becomes idle
-                    qc.invalidateQueries({
-                        queryKey: QUERY_KEYS.messages(
-                            event.properties.sessionID
-                        )
-                    });
-                }
-                break;
-
-            // Session compaction
-            case "session.compacted":
-                if ("sessionID" in event.properties) {
-                    qc.invalidateQueries({
-                        queryKey: QUERY_KEYS.messages(
-                            event.properties.sessionID
-                        )
-                    });
-                }
-                break;
-
-            // Config/provider updates
-            case "lsp.updated":
-                qc.invalidateQueries({ queryKey: QUERY_KEYS.providers });
-                qc.invalidateQueries({ queryKey: QUERY_KEYS.config });
-                break;
-
-            // Server connection event
-            case "server.connected":
-                break;
-
-            // TUI toast events - used by the server to show notifications
-            case "tui.toast.show":
-                if ("message" in event.properties) {
-                    const { message, title, variant } = event.properties as {
-                        message: string;
-                        title?: string;
-                        variant: "info" | "success" | "warning" | "error";
-                    };
-
-                    const toastMessage = title
-                        ? `${title}: ${message}`
-                        : message;
-
-                    switch (variant) {
-                        case "error":
-                            toast.error(toastMessage);
-                            break;
-                        case "warning":
-                            toast.warning(toastMessage);
-                            break;
-                        case "success":
-                            toast.success(toastMessage);
-                            break;
-                        case "info":
-                        default:
-                            toast.info(toastMessage);
-                            break;
                     }
-                }
-                break;
+                    break;
 
-            default:
-            // Unhandled events are silently ignored
-        }
-    }, []);
+                // Config/provider updates
+                case "lsp.updated":
+                    qc.invalidateQueries({ queryKey: QUERY_KEYS.providers });
+                    qc.invalidateQueries({ queryKey: QUERY_KEYS.config });
+                    break;
+
+                // Server connection event
+                case "server.connected":
+                    break;
+
+                // TUI toast events - used by the server to show notifications
+                case "tui.toast.show":
+                    if ("message" in event.properties) {
+                        const { message, title, variant } =
+                            event.properties as {
+                                message: string;
+                                title?: string;
+                                variant:
+                                    | "info"
+                                    | "success"
+                                    | "warning"
+                                    | "error";
+                            };
+
+                        const toastMessage = title
+                            ? `${title}: ${message}`
+                            : message;
+
+                        switch (variant) {
+                            case "error":
+                                toast.error(toastMessage);
+                                break;
+                            case "warning":
+                                toast.warning(toastMessage);
+                                break;
+                            case "success":
+                                toast.success(toastMessage);
+                                break;
+                            case "info":
+                            default:
+                                toast.info(toastMessage);
+                                break;
+                        }
+                    }
+                    break;
+
+                default:
+                // Unhandled events are silently ignored
+            }
+        },
+        [options]
+    );
 
     const connect = useCallback(() => {
         // Clear any pending reconnect

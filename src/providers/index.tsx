@@ -3,7 +3,6 @@ import { type ReactNode } from "react";
 import { QueryProvider } from "./query-provider";
 import { OpencodeProvider } from "./opencode-provider";
 import { ThemeProvider } from "./theme-provider";
-import { EventsProvider } from "./events-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -11,9 +10,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <ThemeProvider>
             <QueryProvider>
                 <OpencodeProvider>
-                    <EventsProvider>
-                        <TooltipProvider>{children}</TooltipProvider>
-                    </EventsProvider>
+                    <TooltipProvider>{children}</TooltipProvider>
                 </OpencodeProvider>
             </QueryProvider>
         </ThemeProvider>
@@ -24,6 +21,7 @@ export { useOpencodeClient } from "./opencode-provider";
 export { useTheme } from "./theme-provider";
 export { queryClient } from "./query-provider";
 export {
+    EventsProvider,
     useEventsContext,
     useSessionStatusFromContext
 } from "./events-provider";

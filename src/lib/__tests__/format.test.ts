@@ -1,4 +1,9 @@
-import { getProjectName, getTimeAgo, getTimeAgoShort } from "../format";
+import {
+    getProjectName,
+    getTimeAgo,
+    getTimeAgoShort,
+    formatTimestamp
+} from "../format";
 
 describe("getProjectName", () => {
     it("extracts the last segment from a path", () => {
@@ -123,5 +128,79 @@ describe("getTimeAgoShort", () => {
         const result = getTimeAgoShort(date);
         expect(result).not.toContain("ago");
         expect(result).not.toBe("14d"); // Should be formatted date, not days
+    });
+});
+
+describe("formatTimestamp", () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2024-06-15T14:30:00Z"));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("returns time only for timestamps from today", () => {
+        // Same day as the mocked system time
+        const todayTimestamp = new Date("2024-06-15T10:45:00Z").getTime();
+        const result = formatTimestamp(todayTimestamp);
+
+        // Should contain time but not date parts
+        expect(result).toMatch(/\d{1,2}:\d{2}/); // Time format like "10:45" or "10:45 AM"
+        expect(result).not.toContain("Jun");
+        expect(result).not.toContain("2024");
+    });
+
+    it("returns month + day + time for timestamps from this year but not today", () => {
+        // Different day, same year
+        const thisYearTimestamp = new Date("2024-03-20T09:15:00Z").getTime();
+        const result = formatTimestamp(thisYearTimestamp);
+
+        // Should contain month, day, and time but not year
+        expect(result).toContain("Mar");
+        expect(result).toContain("20");
+        expect(result).toMatch(/\d{1,2}:\d{2}/);
+        expect(result).not.toContain("2024");
+    });
+
+    it("returns full date with year for timestamps from previous years", () => {
+        // Different year
+        const lastYearTimestamp = new Date("2023-12-25T18:00:00Z").getTime();
+        const result = formatTimestamp(lastYearTimestamp);
+
+        // Should contain month, day, year, and time
+        expect(result).toContain("Dec");
+        expect(result).toContain("25");
+        expect(result).toContain("2023");
+        expect(result).toMatch(/\d{1,2}:\d{2}/);
+    });
+
+    it("handles midnight timestamps correctly", () => {
+        const midnightTimestamp = new Date("2024-06-15T00:00:00Z").getTime();
+        const result = formatTimestamp(midnightTimestamp);
+
+        // Should still show time only since it's today
+        expect(result).toMatch(/\d{1,2}:\d{2}/);
+        expect(result).not.toContain("Jun");
+    });
+
+    it("handles year boundary correctly", () => {
+        // A date clearly in the previous year (early December 2023)
+        const previousYear = new Date("2023-12-15T12:00:00Z").getTime();
+        const result = formatTimestamp(previousYear);
+
+        // Should include year since it's from previous year
+        expect(result).toContain("2023");
+        expect(result).toContain("Dec");
+    });
+
+    it("handles timestamps from future years", () => {
+        const futureTimestamp = new Date("2025-01-01T12:00:00Z").getTime();
+        const result = formatTimestamp(futureTimestamp);
+
+        // Future year should include the year
+        expect(result).toContain("2025");
+        expect(result).toContain("Jan");
     });
 });

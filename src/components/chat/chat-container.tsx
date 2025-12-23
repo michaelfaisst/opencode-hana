@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { useMemo, useCallback, useEffect, useRef } from "react";
 import {
     X,
     Image as ImageIcon,
@@ -15,9 +15,9 @@ import { useProviders, type ImageAttachment, type Command } from "@/hooks";
 import {
     useAppSettingsStore,
     useUILayoutStore,
-    useSessionStore
+    useSessionStore,
+    useMessageQueueStore
 } from "@/stores";
-import { sendCompletionNotification } from "@/lib/notifications";
 
 interface Part {
     type: string;
@@ -67,12 +67,6 @@ interface RetryStatus {
     next: number;
 }
 
-interface QueuedMessage {
-    id: string;
-    text: string;
-    images?: ImageAttachment[];
-}
-
 interface ChatContainerProps {
     messages: Message[];
     isLoadingMessages?: boolean;
@@ -109,11 +103,13 @@ export function ChatContainer({
     const { selectedModel, agentMode, toggleAgentMode } = useAppSettingsStore();
     const { mobileChatSheetOpen, setMobileChatSheetOpen } = useUILayoutStore();
     const { error: sessionError, clearError } = useSessionStore();
+    const { addToQueue, removeFromQueue, popFromQueue, getQueue } =
+        useMessageQueueStore();
 
-    // Message queue for when agent is busy
-    const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
+    // Get the message queue for this session
+    const messageQueue = sessionId ? getQueue(sessionId) : [];
+
     const processingRef = useRef(false);
-    const wasBusyRef = useRef(false);
 
     // Get context limit for the selected model
     const contextLimit = useMemo(() => {
@@ -145,35 +141,27 @@ export function ChatContainer({
 
     // Process message queue when agent becomes idle
     useEffect(() => {
+        if (!sessionId) return;
+
+        const queue = getQueue(sessionId);
         if (
             !isBusy &&
             !isSending &&
-            messageQueue.length > 0 &&
+            queue.length > 0 &&
             !processingRef.current
         ) {
             processingRef.current = true;
-            const nextMessage = messageQueue[0];
 
-            // Small delay to let the UI update, then update state and send
+            // Small delay to let the UI update, then pop from queue and send
             setTimeout(() => {
-                setMessageQueue((prev) => prev.slice(1));
-                onSendMessage(nextMessage.text, nextMessage.images);
+                const nextMessage = popFromQueue(sessionId);
+                if (nextMessage) {
+                    onSendMessage(nextMessage.text, nextMessage.images);
+                }
                 processingRef.current = false;
             }, 100);
         }
-    }, [isBusy, isSending, messageQueue, onSendMessage]);
-
-    // Send notification when assistant finishes responding
-    useEffect(() => {
-        const isCurrentlyBusy = isBusy || isRetrying;
-
-        // Detect transition from busy to not busy
-        if (wasBusyRef.current && !isCurrentlyBusy) {
-            sendCompletionNotification();
-        }
-
-        wasBusyRef.current = isCurrentlyBusy ?? false;
-    }, [isBusy, isRetrying]);
+    }, [isBusy, isSending, sessionId, getQueue, popFromQueue, onSendMessage]);
 
     // Handle sending message (queue if busy)
     const handleSendMessage = useCallback(
@@ -182,26 +170,26 @@ export function ChatContainer({
             clearError();
 
             if (isBusy || isSending) {
-                // Add to queue
-                setMessageQueue((prev) => [
-                    ...prev,
-                    {
-                        id: crypto.randomUUID(),
-                        text,
-                        images
-                    }
-                ]);
+                // Add to queue for this session
+                if (sessionId) {
+                    addToQueue(sessionId, { text, images });
+                }
             } else {
                 onSendMessage(text, images);
             }
         },
-        [isBusy, isSending, onSendMessage, clearError]
+        [isBusy, isSending, onSendMessage, clearError, sessionId, addToQueue]
     );
 
     // Remove a queued message
-    const removeFromQueue = useCallback((id: string) => {
-        setMessageQueue((prev) => prev.filter((m) => m.id !== id));
-    }, []);
+    const handleRemoveFromQueue = useCallback(
+        (messageId: string) => {
+            if (sessionId) {
+                removeFromQueue(sessionId, messageId);
+            }
+        },
+        [sessionId, removeFromQueue]
+    );
 
     return (
         <div className="flex h-full">
@@ -302,7 +290,9 @@ export function ChatContainer({
                                             size="icon"
                                             className="h-6 w-6 shrink-0"
                                             onClick={() =>
-                                                removeFromQueue(queuedMsg.id)
+                                                handleRemoveFromQueue(
+                                                    queuedMsg.id
+                                                )
                                             }
                                         >
                                             <X className="h-3 w-3" />

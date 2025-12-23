@@ -40,7 +40,8 @@ import { useProviders } from "@/hooks";
 import {
     useAppSettingsStore,
     useNotificationStore,
-    NOTIFICATION_SOUNDS
+    PRESET_NOTIFICATION_SOUNDS,
+    isCustomSound
 } from "@/stores";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -61,7 +62,11 @@ import {
     previewSound
 } from "@/lib/notifications";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { AvatarUpload } from "@/components/settings";
+import {
+    AvatarUpload,
+    SoundUpload,
+    CustomSoundsList
+} from "@/components/settings";
 
 export function SettingsPage() {
     const navigate = useNavigate();
@@ -90,11 +95,14 @@ export function SettingsPage() {
         soundEnabled,
         selectedSound,
         browserPermission,
+        customSounds,
+        customSoundsLoaded,
         setNotificationsEnabled,
         setBrowserNotificationsEnabled,
         setSoundEnabled,
         setSelectedSound,
-        setBrowserPermission
+        setBrowserPermission,
+        loadCustomSounds
     } = useNotificationStore();
     const { data: providersData, isLoading: isLoadingProviders } =
         useProviders();
@@ -103,10 +111,11 @@ export function SettingsPage() {
     const [inputValue, setInputValue] = useState("");
     const [showApiKey, setShowApiKey] = useState(false);
 
-    // Sync browser permission state on mount
+    // Sync browser permission state and load custom sounds on mount
     useEffect(() => {
         setBrowserPermission(getBrowserNotificationPermission());
-    }, [setBrowserPermission]);
+        loadCustomSounds();
+    }, [setBrowserPermission, loadCustomSounds]);
 
     // Handle requesting browser notification permission
     const handleRequestPermission = useCallback(async () => {
@@ -659,69 +668,125 @@ export function SettingsPage() {
 
                                     {/* Sound selector */}
                                     {soundEnabled && (
-                                        <div className="space-y-2">
-                                            <Label>Notification sound</Label>
-                                            <div className="flex gap-2 max-w-sm">
-                                                <Select
-                                                    value={selectedSound}
-                                                    onValueChange={(value) =>
-                                                        value &&
-                                                        setSelectedSound(
-                                                            value as typeof selectedSound
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger className="flex-1">
-                                                        <SelectValue>
-                                                            {
-                                                                NOTIFICATION_SOUNDS.find(
-                                                                    (s) =>
-                                                                        s.id ===
-                                                                        selectedSound
-                                                                )?.label
-                                                            }
-                                                        </SelectValue>
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {NOTIFICATION_SOUNDS.map(
-                                                            (sound) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        sound.id
-                                                                    }
-                                                                    value={
-                                                                        sound.id
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>
+                                                    Notification sound
+                                                </Label>
+                                                <div className="flex gap-2 max-w-sm">
+                                                    <Select
+                                                        value={
+                                                            isCustomSound(
+                                                                selectedSound
+                                                            )
+                                                                ? selectedSound
+                                                                : selectedSound
+                                                        }
+                                                        onValueChange={(
+                                                            value
+                                                        ) =>
+                                                            value &&
+                                                            setSelectedSound(
+                                                                value as typeof selectedSound
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="flex-1">
+                                                            <SelectValue>
+                                                                {isCustomSound(
+                                                                    selectedSound
+                                                                )
+                                                                    ? (customSounds.find(
+                                                                          (s) =>
+                                                                              `custom:${s.id}` ===
+                                                                              selectedSound
+                                                                      )?.name ??
+                                                                      "Custom sound")
+                                                                    : PRESET_NOTIFICATION_SOUNDS.find(
+                                                                          (s) =>
+                                                                              s.id ===
+                                                                              selectedSound
+                                                                      )?.label}
+                                                            </SelectValue>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {/* Preset sounds */}
+                                                            {PRESET_NOTIFICATION_SOUNDS.map(
+                                                                (sound) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            sound.id
+                                                                        }
+                                                                        value={
+                                                                            sound.id
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            sound.label
+                                                                        }
+                                                                    </SelectItem>
+                                                                )
+                                                            )}
+                                                            {/* Custom sounds */}
+                                                            {customSoundsLoaded &&
+                                                                customSounds.length >
+                                                                    0 && (
+                                                                    <>
+                                                                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t border-border mt-1 pt-2">
+                                                                            Custom
+                                                                        </div>
+                                                                        {customSounds.map(
+                                                                            (
+                                                                                sound
+                                                                            ) => (
+                                                                                <SelectItem
+                                                                                    key={
+                                                                                        sound.id
+                                                                                    }
+                                                                                    value={`custom:${sound.id}`}
+                                                                                >
+                                                                                    {
+                                                                                        sound.name
+                                                                                    }
+                                                                                </SelectItem>
+                                                                            )
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Tooltip>
+                                                        <TooltipTrigger
+                                                            render={
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        previewSound(
+                                                                            selectedSound
+                                                                        )
                                                                     }
                                                                 >
-                                                                    {
-                                                                        sound.label
-                                                                    }
-                                                                </SelectItem>
-                                                            )
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                                <Tooltip>
-                                                    <TooltipTrigger
-                                                        render={
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    previewSound(
-                                                                        selectedSound
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Volume2 className="h-4 w-4" />
-                                                            </Button>
-                                                        }
-                                                    />
-                                                    <TooltipContent>
-                                                        Preview sound
-                                                    </TooltipContent>
-                                                </Tooltip>
+                                                                    <Volume2 className="h-4 w-4" />
+                                                                </Button>
+                                                            }
+                                                        />
+                                                        <TooltipContent>
+                                                            Preview sound
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
                                             </div>
+
+                                            {/* Custom sounds management */}
+                                            <CustomSoundsList
+                                                sounds={customSounds}
+                                                selectedSound={selectedSound}
+                                                onSelect={setSelectedSound}
+                                            />
+
+                                            {/* Upload new custom sound */}
+                                            <SoundUpload />
                                         </div>
                                     )}
                                 </>

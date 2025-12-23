@@ -84,9 +84,12 @@ export const MarkdownContent = memo(function MarkdownContent({
                             </a>
                         );
                     },
+                    hr() {
+                        return <hr className="my-6 border-t border-border" />;
+                    },
                     table({ children }) {
                         return (
-                            <div className="mb-6 overflow-x-auto">
+                            <div className="my-6 overflow-x-auto">
                                 <table className="min-w-full border-collapse text-sm">
                                     {children}
                                 </table>

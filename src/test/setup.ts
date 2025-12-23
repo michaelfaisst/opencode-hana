@@ -47,12 +47,14 @@ Object.defineProperty(window, "matchMedia", {
     })
 });
 
-// Mock Notification API
+// Mock Notification API (configurable so tests can override)
 Object.defineProperty(window, "Notification", {
     value: {
         permission: "denied",
         requestPermission: () => Promise.resolve("denied")
-    }
+    },
+    writable: true,
+    configurable: true
 });
 
 // Mock ResizeObserver

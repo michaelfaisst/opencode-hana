@@ -1,5 +1,12 @@
 import { toast } from "sonner";
-import { useNotificationStore, type NotificationSound } from "@/stores";
+import { ArrowRight } from "lucide-react";
+import {
+    useNotificationStore,
+    isCustomSound,
+    getCustomSoundId,
+    type NotificationSound
+} from "@/stores";
+import { createCustomSoundUrl } from "./custom-sounds-db";
 
 /**
  * Safely check if Notification API is available
@@ -46,13 +53,40 @@ export function getBrowserNotificationPermission(): NotificationPermission {
 
 /**
  * Play a notification sound using MP3 files
+ * Supports both preset sounds and custom sounds from IndexedDB
  */
-export function playNotificationSound(sound: NotificationSound): void {
-    const audio = new Audio(`/sounds/${sound}.mp3`);
-    audio.volume = 0.5;
-    audio.play().catch((err) => {
+export async function playNotificationSound(
+    sound: NotificationSound
+): Promise<void> {
+    try {
+        // Handle custom sounds (stored in IndexedDB)
+        if (isCustomSound(sound)) {
+            const customId = getCustomSoundId(sound);
+            const blobUrl = await createCustomSoundUrl(customId);
+
+            if (!blobUrl) {
+                console.warn("Custom sound not found:", customId);
+                return;
+            }
+
+            const audio = new Audio(blobUrl);
+            audio.volume = 0.5;
+
+            // Revoke URL after playback to prevent memory leaks
+            audio.onended = () => URL.revokeObjectURL(blobUrl);
+            audio.onerror = () => URL.revokeObjectURL(blobUrl);
+
+            await audio.play();
+            return;
+        }
+
+        // Handle preset sounds (static files)
+        const audio = new Audio(`/sounds/${sound}.mp3`);
+        audio.volume = 0.5;
+        await audio.play();
+    } catch (err) {
         console.warn("Could not play notification sound:", err);
-    });
+    }
 }
 
 /**
@@ -65,6 +99,7 @@ export function previewSound(sound: NotificationSound): void {
 interface CompletionNotificationOptions {
     title?: string;
     body?: string;
+    onClick?: () => void;
 }
 
 /**
@@ -76,8 +111,11 @@ interface CompletionNotificationOptions {
 export function sendCompletionNotification(
     options: CompletionNotificationOptions = {}
 ): void {
-    const { title = "OpenCode", body = "Assistant has finished responding" } =
-        options;
+    const {
+        title = "OpenCode",
+        body = "Assistant has finished responding",
+        onClick
+    } = options;
 
     const state = useNotificationStore.getState();
 
@@ -95,11 +133,20 @@ export function sendCompletionNotification(
         // Only show browser notification if tab is not focused
         if (document.hidden) {
             try {
-                new Notification(title, {
+                const notification = new Notification(title, {
                     body,
                     icon: "/logo.svg",
                     tag: "opencode-completion" // Prevents duplicate notifications
                 });
+
+                // Add click handler to focus window and navigate
+                if (onClick) {
+                    notification.onclick = () => {
+                        window.focus();
+                        onClick();
+                        notification.close();
+                    };
+                }
             } catch (err) {
                 console.warn("Could not show browser notification:", err);
             }
@@ -107,9 +154,20 @@ export function sendCompletionNotification(
     }
 
     // Always show toast (when notifications are enabled)
-    toast.success(body, {
-        duration: 3000
-    });
+    // Add click action to navigate to the session
+    if (onClick) {
+        toast.success(body, {
+            duration: 3000,
+            action: {
+                label: <ArrowRight className="h-4 w-4" />,
+                onClick: () => onClick()
+            }
+        });
+    } else {
+        toast.success(body, {
+            duration: 3000
+        });
+    }
 
     // Play sound if enabled
     if (state.soundEnabled) {

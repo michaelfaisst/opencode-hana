@@ -11,9 +11,15 @@ describe("useAppSettingsStore", () => {
             store.setSelectedModel(null);
             store.setAgentMode("build");
             store.setReplaceSessionOnNew(false);
+            store.setShowMessageTimestamps(false);
+            store.setShowSessionTimestamps(true);
             store.setVoiceInputEnabled(false);
             store.setVoiceInputApiKey(null);
             store.setVoiceInputLanguage("en-US");
+            store.setAssistantNameSource("default");
+            store.setAssistantCustomName("");
+            store.setAssistantAvatar(null);
+            store.setAssistantSystemPrompt("");
         });
     });
 
@@ -41,6 +47,26 @@ describe("useAppSettingsStore", () => {
             expect(voiceInput.enabled).toBe(false);
             expect(voiceInput.apiKey).toBeNull();
             expect(voiceInput.language).toBe("en-US");
+        });
+
+        it("has default assistant persona settings", () => {
+            const { assistantPersona } = useAppSettingsStore.getState();
+            expect(assistantPersona.nameSource).toBe("default");
+            expect(assistantPersona.customName).toBe("");
+            expect(assistantPersona.avatarBase64).toBeNull();
+            expect(assistantPersona.customSystemPrompt).toBe("");
+        });
+
+        it("has message timestamps disabled by default", () => {
+            expect(useAppSettingsStore.getState().showMessageTimestamps).toBe(
+                false
+            );
+        });
+
+        it("has session timestamps enabled by default", () => {
+            expect(useAppSettingsStore.getState().showSessionTimestamps).toBe(
+                true
+            );
         });
     });
 
@@ -154,6 +180,159 @@ describe("useAppSettingsStore", () => {
             expect(voiceInput.enabled).toBe(true);
             expect(voiceInput.apiKey).toBe("my-key");
             expect(voiceInput.language).toBe("fr-FR");
+        });
+    });
+
+    describe("timestamp visibility settings", () => {
+        it("setShowMessageTimestamps updates the setting", () => {
+            act(() => {
+                useAppSettingsStore.getState().setShowMessageTimestamps(true);
+            });
+            expect(useAppSettingsStore.getState().showMessageTimestamps).toBe(
+                true
+            );
+
+            act(() => {
+                useAppSettingsStore.getState().setShowMessageTimestamps(false);
+            });
+            expect(useAppSettingsStore.getState().showMessageTimestamps).toBe(
+                false
+            );
+        });
+
+        it("setShowSessionTimestamps updates the setting", () => {
+            act(() => {
+                useAppSettingsStore.getState().setShowSessionTimestamps(false);
+            });
+            expect(useAppSettingsStore.getState().showSessionTimestamps).toBe(
+                false
+            );
+
+            act(() => {
+                useAppSettingsStore.getState().setShowSessionTimestamps(true);
+            });
+            expect(useAppSettingsStore.getState().showSessionTimestamps).toBe(
+                true
+            );
+        });
+    });
+
+    describe("assistant persona settings", () => {
+        it("setAssistantNameSource updates the name source", () => {
+            act(() => {
+                useAppSettingsStore.getState().setAssistantNameSource("model");
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona.nameSource
+            ).toBe("model");
+
+            act(() => {
+                useAppSettingsStore.getState().setAssistantNameSource("custom");
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona.nameSource
+            ).toBe("custom");
+
+            act(() => {
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantNameSource("default");
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona.nameSource
+            ).toBe("default");
+        });
+
+        it("setAssistantCustomName updates the custom name", () => {
+            act(() => {
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantCustomName("My Assistant");
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona.customName
+            ).toBe("My Assistant");
+        });
+
+        it("setAssistantCustomName can set empty string", () => {
+            act(() => {
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantCustomName("Some Name");
+                useAppSettingsStore.getState().setAssistantCustomName("");
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona.customName
+            ).toBe("");
+        });
+
+        it("setAssistantAvatar updates the avatar base64", () => {
+            const testBase64 =
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...";
+            act(() => {
+                useAppSettingsStore.getState().setAssistantAvatar(testBase64);
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona.avatarBase64
+            ).toBe(testBase64);
+        });
+
+        it("setAssistantAvatar can clear the avatar", () => {
+            act(() => {
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantAvatar("some-base64-data");
+                useAppSettingsStore.getState().setAssistantAvatar(null);
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona.avatarBase64
+            ).toBeNull();
+        });
+
+        it("setAssistantSystemPrompt updates the system prompt", () => {
+            const testPrompt =
+                "You are a helpful assistant that speaks like a pirate.";
+            act(() => {
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantSystemPrompt(testPrompt);
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona
+                    .customSystemPrompt
+            ).toBe(testPrompt);
+        });
+
+        it("setAssistantSystemPrompt can set empty string", () => {
+            act(() => {
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantSystemPrompt("Some prompt");
+                useAppSettingsStore.getState().setAssistantSystemPrompt("");
+            });
+            expect(
+                useAppSettingsStore.getState().assistantPersona
+                    .customSystemPrompt
+            ).toBe("");
+        });
+
+        it("assistant persona settings are independent of each other", () => {
+            act(() => {
+                useAppSettingsStore.getState().setAssistantNameSource("custom");
+                useAppSettingsStore.getState().setAssistantCustomName("Claude");
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantAvatar("avatar-data");
+                useAppSettingsStore
+                    .getState()
+                    .setAssistantSystemPrompt("Be helpful");
+            });
+
+            const { assistantPersona } = useAppSettingsStore.getState();
+            expect(assistantPersona.nameSource).toBe("custom");
+            expect(assistantPersona.customName).toBe("Claude");
+            expect(assistantPersona.avatarBase64).toBe("avatar-data");
+            expect(assistantPersona.customSystemPrompt).toBe("Be helpful");
         });
     });
 });

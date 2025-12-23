@@ -11,6 +11,8 @@ describe("useUILayoutStore", () => {
             store.setChatSidebarCollapsed(false);
             store.setMobileSessionsSheetOpen(false);
             store.setMobileChatSheetOpen(false);
+            store.setSessionsSidebarWidth(320);
+            store.setChatSidebarWidth(288);
             // Clear collapsed sections by setting them all to not collapsed
         });
     });
@@ -26,6 +28,12 @@ describe("useUILayoutStore", () => {
             const state = useUILayoutStore.getState();
             expect(state.mobileSessionsSheetOpen).toBe(false);
             expect(state.mobileChatSheetOpen).toBe(false);
+        });
+
+        it("has default sidebar widths", () => {
+            const state = useUILayoutStore.getState();
+            expect(state.sessionsSidebarWidth).toBe(320);
+            expect(state.chatSidebarWidth).toBe(288);
         });
     });
 
@@ -116,6 +124,40 @@ describe("useUILayoutStore", () => {
                 useUILayoutStore.getState().setMobileChatSheetOpen(true);
             });
             expect(useUILayoutStore.getState().mobileChatSheetOpen).toBe(true);
+        });
+    });
+
+    describe("sidebar widths", () => {
+        it("setSessionsSidebarWidth updates the width", () => {
+            act(() => {
+                useUILayoutStore.getState().setSessionsSidebarWidth(400);
+            });
+            expect(useUILayoutStore.getState().sessionsSidebarWidth).toBe(400);
+        });
+
+        it("setChatSidebarWidth updates the width", () => {
+            act(() => {
+                useUILayoutStore.getState().setChatSidebarWidth(350);
+            });
+            expect(useUILayoutStore.getState().chatSidebarWidth).toBe(350);
+        });
+
+        it("sidebar widths can be set to minimum values", () => {
+            act(() => {
+                useUILayoutStore.getState().setSessionsSidebarWidth(200);
+                useUILayoutStore.getState().setChatSidebarWidth(200);
+            });
+            expect(useUILayoutStore.getState().sessionsSidebarWidth).toBe(200);
+            expect(useUILayoutStore.getState().chatSidebarWidth).toBe(200);
+        });
+
+        it("sidebar widths can be set to large values", () => {
+            act(() => {
+                useUILayoutStore.getState().setSessionsSidebarWidth(600);
+                useUILayoutStore.getState().setChatSidebarWidth(500);
+            });
+            expect(useUILayoutStore.getState().sessionsSidebarWidth).toBe(600);
+            expect(useUILayoutStore.getState().chatSidebarWidth).toBe(500);
         });
     });
 

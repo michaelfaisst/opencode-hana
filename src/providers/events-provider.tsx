@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, type ReactNode } from "react";
-import { useEvents } from "@/hooks/use-events";
+import { useEvents, type UseEventsOptions } from "@/hooks/use-events";
 import type { SessionStatus } from "@opencode-ai/sdk/client";
 
 interface EventsContextValue {
@@ -14,12 +14,16 @@ interface EventsContextValue {
 
 const EventsContext = createContext<EventsContextValue | null>(null);
 
-interface EventsProviderProps {
+interface EventsProviderProps extends UseEventsOptions {
     children: ReactNode;
 }
 
-export function EventsProvider({ children }: EventsProviderProps) {
-    const events = useEvents();
+export function EventsProvider({
+    children,
+    navigateToSession,
+    getSessionTitle
+}: EventsProviderProps) {
+    const events = useEvents({ navigateToSession, getSessionTitle });
 
     return (
         <EventsContext.Provider value={events}>
